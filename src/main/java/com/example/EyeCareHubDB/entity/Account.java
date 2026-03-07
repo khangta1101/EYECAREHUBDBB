@@ -75,7 +75,7 @@ public class Account {
     }
     
     public enum AccountRole {
-        CUSTOMER, ADMIN, STAFF
+        CUSTOMER, ADMIN, STAFF, MANAGER, OPERATIONS_STAFF
     }
     
     public enum AccountStatus {
