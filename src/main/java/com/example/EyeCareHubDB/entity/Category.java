@@ -19,7 +19,9 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "categories")
@@ -47,24 +49,36 @@ public class Category {
     
     @ManyToOne
     @JoinColumn(name = "parent_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Category parent;
     
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @Builder.Default
     private List<Category> subCategories = new ArrayList<>();
     
     @OneToMany(mappedBy = "category")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @Builder.Default
     private List<Product> products = new ArrayList<>();
     
     @Column(nullable = false)
+    @Builder.Default
     private Integer displayOrder = 0;
     
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isActive = true;
     
     @Column(nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     
     @Column(nullable = false)
+    @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
     
     @PrePersist
