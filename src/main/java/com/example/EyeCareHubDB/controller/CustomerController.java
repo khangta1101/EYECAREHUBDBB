@@ -63,6 +63,13 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.updateCustomer(id, request));
     }
     
+    @PutMapping("/account/{accountId}")
+    public ResponseEntity<CustomerDTO> updateCustomerByAccountId(
+            @PathVariable Long accountId,
+            @RequestBody CustomerUpdateRequest request) {
+        return ResponseEntity.ok(customerService.updateCustomerByAccountId(accountId, request));
+    }
+    
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
         customerService.deleteCustomer(id);

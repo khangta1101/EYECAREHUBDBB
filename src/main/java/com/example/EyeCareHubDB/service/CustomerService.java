@@ -53,7 +53,7 @@ public class CustomerService {
                 .account(account)
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
-                .gender(request.getGender() != null ? Customer.Gender.valueOf(request.getGender()) : null)
+                .gender(request.getGender() != null ? Customer.Gender.valueOf(request.getGender().toUpperCase()) : null)
                 .dateOfBirth(request.getDateOfBirth())
                 .build();
         
@@ -72,7 +72,31 @@ public class CustomerService {
             customer.setLastName(request.getLastName());
         }
         if (request.getGender() != null) {
-            customer.setGender(Customer.Gender.valueOf(request.getGender()));
+            customer.setGender(Customer.Gender.valueOf(request.getGender().toUpperCase()));
+        }
+        if (request.getDateOfBirth() != null) {
+            customer.setDateOfBirth(request.getDateOfBirth());
+        }
+        if (request.getAvatarUrl() != null) {
+            customer.setAvatarUrl(request.getAvatarUrl());
+        }
+        
+        Customer updated = customerRepository.save(customer);
+        return toDTO(updated);
+    }
+    
+    public CustomerDTO updateCustomerByAccountId(Long accountId, CustomerUpdateRequest request) {
+        Customer customer = customerRepository.findByAccountId(accountId)
+                .orElseThrow(() -> new RuntimeException("Customer not found for account id: " + accountId));
+        
+        if (request.getFirstName() != null) {
+            customer.setFirstName(request.getFirstName());
+        }
+        if (request.getLastName() != null) {
+            customer.setLastName(request.getLastName());
+        }
+        if (request.getGender() != null) {
+            customer.setGender(Customer.Gender.valueOf(request.getGender().toUpperCase()));
         }
         if (request.getDateOfBirth() != null) {
             customer.setDateOfBirth(request.getDateOfBirth());
