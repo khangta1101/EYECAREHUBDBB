@@ -1,6 +1,9 @@
 package com.example.EyeCareHubDB.service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
@@ -86,10 +89,16 @@ public class ProductService {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + request.getCategoryId()));
         
+        // Auto-generate SKU if not provided
+        String sku = request.getSku();
+        if (sku == null || sku.trim().isEmpty()) {
+            sku = generateUniqueSKU();
+        }
+        
         Product product = Product.builder()
                 .name(request.getName())
                 .slug(request.getSlug())
-                .sku(request.getSku())
+                .sku(sku)
                 .category(category)
                 .brand(request.getBrand())
                 .shortDescription(request.getShortDescription())
@@ -104,6 +113,36 @@ public class ProductService {
         
         Product saved = productRepository.save(product);
         return toDTO(saved);
+    }
+    
+    private String generateUniqueSKU() {
+        String sku;
+        int attempts = 0;
+        do {
+            // Generate SKU format: PRD-YYYYMMDD-XXXX
+            // Example: PRD-20260308-A1B2
+            LocalDateTime now = LocalDateTime.now();
+            String datePart = now.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+            String randomPart = generateRandomString(4);
+            sku = "PRD-" + datePart + "-" + randomPart;
+            attempts++;
+            
+            if (attempts > 100) {
+                throw new RuntimeException("Unable to generate unique SKU after 100 attempts");
+            }
+        } while (productRepository.existsBySku(sku));
+        
+        return sku;
+    }
+    
+    private String generateRandomString(int length) {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        Random random = new Random();
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
     
     public ProductDTO updateProduct(Long id, ProductUpdateRequest request) {
