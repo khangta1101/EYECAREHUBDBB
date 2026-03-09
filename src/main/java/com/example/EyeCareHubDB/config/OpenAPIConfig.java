@@ -1,11 +1,12 @@
 package com.example.EyeCareHubDB.config;
 
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.servers.Server;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.List;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.servers.Server;
 
 @Configuration
 public class OpenAPIConfig {
@@ -21,6 +22,6 @@ public class OpenAPIConfig {
         productionServer.setUrl("https://eyecarehubdbb-production.up.railway.app");
         productionServer.setDescription("Server Production (Railway)");
 
-        return new OpenAPI().servers(List.of(productionServer, localServer));
+        return new OpenAPI().servers(List.of(localServer, productionServer));
     }
 }
