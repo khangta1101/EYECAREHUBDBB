@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -23,9 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import com.example.EyeCareHubDB.dto.ProductMediaCreateRequest;
 import com.example.EyeCareHubDB.dto.ProductMediaDTO;
-import com.example.EyeCareHubDB.dto.ProductMediaUpdateRequest;
 import com.example.EyeCareHubDB.service.ProductMediaService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -70,75 +67,76 @@ public class ProductMediaController {
         return ResponseEntity.ok(mediaService.getImagesByProductId(productId));
     }
     
-    @PostMapping("/product/{productId}")
+    @PostMapping(value = "/product/{productId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductMediaDTO> addMedia(
             @PathVariable Long productId,
-            @RequestBody ProductMediaCreateRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(mediaService.addMedia(productId, request));
-    }
-    
-        @PostMapping(value = "/product/{productId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ProductMediaDTO> uploadImage(
-            @PathVariable Long productId,
             @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "type", required = false, defaultValue = "IMAGE") String type,
             @RequestParam(value = "altText", required = false) String altText,
             @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "displayOrder", required = false, defaultValue = "0") Integer displayOrder,
             @RequestParam(value = "isPrimary", required = false, defaultValue = "false") Boolean isPrimary) {
-        
-        if (file.isEmpty()) {
-            throw new RuntimeException("Please select a file to upload");
-        }
-        
-        try {
-            // Save the file
-            byte[] bytes = file.getBytes();
-            String originalFileName = file.getOriginalFilename();
-            String fileExtension = "";
-            if (originalFileName != null && originalFileName.contains(".")) {
-                fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
-            }
-            
-            // Generate a unique file name
-            String newFileName = UUID.randomUUID().toString() + fileExtension;
-            Path path = uploadPath.resolve(Paths.get(newFileName)).normalize().toAbsolutePath();
-            Files.write(path, bytes);
-            
-            // Construct the file download URI
-            String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/uploads/")
-                    .path(newFileName)
-                    .toUriString();
-            
-            // Create the media with the uploaded file URL
-            ProductMediaCreateRequest request = ProductMediaCreateRequest.builder()
-                    .type("IMAGE")
-                    .url(fileDownloadUri)
-                    .altText(altText)
-                    .title(title)
-                    .displayOrder(displayOrder)
-                    .isPrimary(isPrimary)
-                    .build();
-            
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(mediaService.addMedia(productId, request));
-                    
-        } catch (IOException e) {
-            throw new RuntimeException("Could not upload the file: " + e.getMessage());
-        }
+        String fileDownloadUri = saveUploadedFile(file);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mediaService.addMedia(productId, fileDownloadUri, type, altText, title, displayOrder, isPrimary));
     }
     
-    @PutMapping("/{id}")
+    @PostMapping(value = "/product/{productId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductMediaDTO> uploadImage(
+            @PathVariable Long productId,
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "type", required = false, defaultValue = "IMAGE") String type,
+            @RequestParam(value = "altText", required = false) String altText,
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "displayOrder", required = false, defaultValue = "0") Integer displayOrder,
+            @RequestParam(value = "isPrimary", required = false, defaultValue = "false") Boolean isPrimary) {
+        String fileDownloadUri = saveUploadedFile(file);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mediaService.addMedia(productId, fileDownloadUri, type, altText, title, displayOrder, isPrimary));
+    }
+    
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductMediaDTO> updateMedia(
             @PathVariable Long id,
-            @RequestBody ProductMediaUpdateRequest request) {
-        return ResponseEntity.ok(mediaService.updateMedia(id, request));
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "type", required = false) String type,
+            @RequestParam(value = "altText", required = false) String altText,
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "displayOrder", required = false) Integer displayOrder,
+            @RequestParam(value = "isPrimary", required = false) Boolean isPrimary) {
+        String fileDownloadUri = file != null ? saveUploadedFile(file) : null;
+        return ResponseEntity.ok(mediaService.updateMedia(id, fileDownloadUri, type, altText, title, displayOrder, isPrimary));
     }
     
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMedia(@PathVariable Long id) {
         mediaService.deleteMedia(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private String saveUploadedFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("Please select a file to upload");
+        }
+
+        try {
+            byte[] bytes = file.getBytes();
+            String originalFileName = file.getOriginalFilename();
+            String fileExtension = "";
+            if (originalFileName != null && originalFileName.contains(".")) {
+                fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+            }
+
+            String newFileName = UUID.randomUUID() + fileExtension;
+            Path path = uploadPath.resolve(Paths.get(newFileName)).normalize().toAbsolutePath();
+            Files.write(path, bytes);
+
+            return ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/")
+                    .path(newFileName)
+                    .toUriString();
+        } catch (IOException e) {
+            throw new RuntimeException("Could not upload the file: " + e.getMessage());
+        }
     }
 }

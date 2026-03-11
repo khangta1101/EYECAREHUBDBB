@@ -6,9 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.example.EyeCareHubDB.dto.ProductMediaCreateRequest;
 import com.example.EyeCareHubDB.dto.ProductMediaDTO;
-import com.example.EyeCareHubDB.dto.ProductMediaUpdateRequest;
 import com.example.EyeCareHubDB.entity.Product;
 import com.example.EyeCareHubDB.entity.ProductMedia;
 import com.example.EyeCareHubDB.repository.ProductMediaRepository;
@@ -48,45 +46,59 @@ public class ProductMediaService {
                 .collect(Collectors.toList());
     }
     
-    public ProductMediaDTO addMedia(Long productId, ProductMediaCreateRequest request) {
+    public ProductMediaDTO addMedia(
+            Long productId,
+            String fileUrl,
+            String type,
+            String altText,
+            String title,
+            Integer displayOrder,
+            Boolean isPrimary) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
         
         ProductMedia media = ProductMedia.builder()
                 .product(product)
-                .type(ProductMedia.MediaType.valueOf(request.getType() != null ? request.getType() : "IMAGE"))
-                .url(request.getUrl())
-                .altText(request.getAltText())
-                .title(request.getTitle())
-                .displayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0)
-                .isPrimary(request.getIsPrimary() != null ? request.getIsPrimary() : false)
+                .type(ProductMedia.MediaType.valueOf(type != null ? type : "IMAGE"))
+                .url(fileUrl)
+                .altText(altText)
+                .title(title)
+                .displayOrder(displayOrder != null ? displayOrder : 0)
+                .isPrimary(isPrimary != null ? isPrimary : false)
                 .build();
         
         ProductMedia saved = mediaRepository.save(media);
         return toDTO(saved);
     }
     
-    public ProductMediaDTO updateMedia(Long id, ProductMediaUpdateRequest request) {
+    public ProductMediaDTO updateMedia(
+            Long id,
+            String fileUrl,
+            String type,
+            String altText,
+            String title,
+            Integer displayOrder,
+            Boolean isPrimary) {
         ProductMedia media = mediaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product media not found with id: " + id));
         
-        if (request.getType() != null) {
-            media.setType(ProductMedia.MediaType.valueOf(request.getType()));
+        if (type != null) {
+            media.setType(ProductMedia.MediaType.valueOf(type));
         }
-        if (request.getUrl() != null) {
-            media.setUrl(request.getUrl());
+        if (fileUrl != null) {
+            media.setUrl(fileUrl);
         }
-        if (request.getAltText() != null) {
-            media.setAltText(request.getAltText());
+        if (altText != null) {
+            media.setAltText(altText);
         }
-        if (request.getTitle() != null) {
-            media.setTitle(request.getTitle());
+        if (title != null) {
+            media.setTitle(title);
         }
-        if (request.getDisplayOrder() != null) {
-            media.setDisplayOrder(request.getDisplayOrder());
+        if (displayOrder != null) {
+            media.setDisplayOrder(displayOrder);
         }
-        if (request.getIsPrimary() != null) {
-            media.setIsPrimary(request.getIsPrimary());
+        if (isPrimary != null) {
+            media.setIsPrimary(isPrimary);
         }
         
         ProductMedia updated = mediaRepository.save(media);
