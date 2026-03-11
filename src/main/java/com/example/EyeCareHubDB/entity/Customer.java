@@ -5,20 +5,16 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.PostLoad;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,39 +29,43 @@ import lombok.NoArgsConstructor;
 public class Customer {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "\"CustomerId\"")
     private Long id;
     
-    @OneToOne
-    @JoinColumn(name = "account_id", nullable = false, unique = true)
+    @Transient
     private Account account;
     
-    @Column(nullable = false, length = 100)
+    @Column(name = "\"FullName\"", nullable = false, length = 200)
+    private String fullName;
+
+    @Transient
     private String firstName;
     
-    @Column(nullable = false, length = 100)
+    @Transient
     private String lastName;
     
     @Enumerated(EnumType.STRING)
-    @Column(length = 10)
+    @Column(name = "\"Gender\"", length = 10)
     private Gender gender;
     
+    @Column(name = "\"DateOfBirth\"")
     private LocalDate dateOfBirth;
     
-    @Column(length = 500)
+    @Column(name = "\"AvatarUrl\"", length = 500)
     private String avatarUrl;
     
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Transient
     private List<Address> addresses = new ArrayList<>();
     
-    @Column(nullable = false, updatable = false)
+    @Column(name = "\"CreatedAt\"", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
     
-    @Column(nullable = false)
+    @Transient
     private LocalDateTime updatedAt = LocalDateTime.now();
     
     @PrePersist
     protected void onCreate() {
+        syncFullName();
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
@@ -76,7 +76,34 @@ public class Customer {
     
     @PreUpdate
     protected void onUpdate() {
+        syncFullName();
         updatedAt = LocalDateTime.now();
+    }
+
+    @PostLoad
+    protected void onLoad() {
+        splitFullName();
+    }
+
+    private void syncFullName() {
+        String first = firstName == null ? "" : firstName.trim();
+        String last = lastName == null ? "" : lastName.trim();
+        String combined = (first + " " + last).trim();
+        if (combined.isEmpty()) {
+            combined = fullName;
+        }
+        fullName = combined;
+    }
+
+    private void splitFullName() {
+        if (fullName == null || fullName.isBlank()) {
+            firstName = null;
+            lastName = null;
+            return;
+        }
+        String[] parts = fullName.trim().split("\\s+", 2);
+        firstName = parts[0];
+        lastName = parts.length > 1 ? parts[1] : "";
     }
     
     public enum Gender {

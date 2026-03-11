@@ -18,7 +18,7 @@ public class Shipment {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    @JoinColumn(name = "\"OrderId\"", nullable = false, unique = true)
     private Order order;
 
     @Column(length = 100)

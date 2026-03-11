@@ -38,14 +38,26 @@ public class AuthenticationService {
     private final Map<String, OtpEntry> otpStore = new ConcurrentHashMap<>();
     
     public Account register(RegisterRequest request) {
-        // Check if email already exists
-        if (accountRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered: " + request.getEmail());
+        if (request == null || request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new RuntimeException("Email is required");
         }
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new RuntimeException("Password is required");
+        }
+
+        String email = request.getEmail().trim();
+
+        // Check if email already exists
+        if (accountRepository.existsByEmail(email)) {
+            throw new RuntimeException("Email already registered: " + email);
+        }
+
+        String username = generateUniqueUsername(email);
         
         // Create new account
         Account account = Account.builder()
-                .email(request.getEmail())
+                .email(email)
+                .username(username)
                 .passwordHash(request.getPassword()) // TODO: Hash password properly with BCrypt
                 .phoneNumber(request.getPhoneNumber())
                 .role(Account.AccountRole.CUSTOMER)
@@ -56,10 +68,14 @@ public class AuthenticationService {
         
         // Create customer profile
         if (request.getFirstName() != null || request.getLastName() != null) {
+            String firstName = request.getFirstName() != null ? request.getFirstName().trim() : "";
+            String lastName = request.getLastName() != null ? request.getLastName().trim() : "";
+            String fullName = (firstName + " " + lastName).trim();
             Customer customer = Customer.builder()
-                    .account(savedAccount)
-                    .firstName(request.getFirstName())
-                    .lastName(request.getLastName())
+                .id(savedAccount.getId())
+                .fullName(fullName)
+                .firstName(firstName)
+                .lastName(lastName)
                     .build();
             customerRepository.save(customer);
         }
@@ -158,6 +174,20 @@ public class AuthenticationService {
     private String generateToken() {
         // TODO: Implement JWT token generation
         return UUID.randomUUID().toString();
+    }
+
+    private String generateUniqueUsername(String email) {
+        String base = email == null ? "user" : email.split("@", 2)[0].trim();
+        if (base.isBlank()) {
+            base = "user";
+        }
+        String candidate = base;
+        int suffix = 1;
+        while (accountRepository.existsByUsername(candidate)) {
+            candidate = base + suffix;
+            suffix++;
+        }
+        return candidate;
     }
 
     private String generateOtp() {

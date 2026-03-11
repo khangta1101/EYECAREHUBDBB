@@ -55,7 +55,7 @@ public class ProductService {
     
     public List<ProductDTO> getFeaturedProducts(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
-        return productRepository.findByIsFeaturedTrue(pageable).stream()
+        return productRepository.findFeaturedProducts(pageable).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }

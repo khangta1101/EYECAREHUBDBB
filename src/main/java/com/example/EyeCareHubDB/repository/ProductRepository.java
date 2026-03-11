@@ -27,18 +27,19 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     
     Page<Product> findByIsActiveTrue(Pageable pageable);
     
-    Page<Product> findByIsFeaturedTrue(Pageable pageable);
+    @Query("SELECT p FROM Product p WHERE p.isActive = true ORDER BY p.createdAt DESC")
+    Page<Product> findFeaturedProducts(Pageable pageable);
     
     @Query("SELECT p FROM Product p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) AND p.isActive = true")
     Page<Product> searchByName(@Param("keyword") String keyword, Pageable pageable);
     
-    @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.isActive = true ORDER BY p.viewCount DESC")
+    @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.isActive = true ORDER BY p.createdAt DESC")
     List<Product> findPopularProductsByCategory(@Param("categoryId") Long categoryId, Pageable pageable);
     
-    @Query("SELECT p FROM Product p WHERE p.isActive = true ORDER BY p.viewCount DESC")
+    @Query("SELECT p FROM Product p WHERE p.isActive = true ORDER BY p.createdAt DESC")
     Page<Product> findPopularProducts(Pageable pageable);
     
-    @Query("SELECT p FROM Product p WHERE p.isActive = true AND p.salePrice IS NOT NULL ORDER BY p.updatedAt DESC")
+    @Query("SELECT p FROM Product p WHERE p.isActive = true ORDER BY p.createdAt DESC")
     Page<Product> findProductsOnSale(Pageable pageable);
     
     boolean existsBySlug(String slug);

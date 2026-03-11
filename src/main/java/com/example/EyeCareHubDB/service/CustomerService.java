@@ -1,19 +1,19 @@
 package com.example.EyeCareHubDB.service;
 
-import com.example.EyeCareHubDB.dto.CustomerDTO;
-import com.example.EyeCareHubDB.dto.CustomerCreateRequest;
-import com.example.EyeCareHubDB.dto.CustomerUpdateRequest;
-import com.example.EyeCareHubDB.dto.AddressDTO;
-import com.example.EyeCareHubDB.entity.Customer;
-import com.example.EyeCareHubDB.entity.Account;
-import com.example.EyeCareHubDB.repository.CustomerRepository;
-import com.example.EyeCareHubDB.repository.AccountRepository;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.example.EyeCareHubDB.dto.CustomerCreateRequest;
+import com.example.EyeCareHubDB.dto.CustomerDTO;
+import com.example.EyeCareHubDB.dto.CustomerUpdateRequest;
+import com.example.EyeCareHubDB.entity.Customer;
+import com.example.EyeCareHubDB.repository.AccountRepository;
+import com.example.EyeCareHubDB.repository.CustomerRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -42,19 +42,31 @@ public class CustomerService {
     }
     
     public CustomerDTO createCustomer(Long accountId, CustomerCreateRequest request) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new RuntimeException("Account not found with id: " + accountId));
-        
-        if (customerRepository.existsByAccountId(accountId)) {
+        if (accountId == null) {
+            throw new RuntimeException("accountId is required");
+        }
+        if (!accountRepository.existsById(accountId)) {
+            throw new RuntimeException("Account not found with id: " + accountId);
+        }
+        if (customerRepository.existsById(accountId)) {
             throw new RuntimeException("Customer already exists for this account");
         }
-        
+
+        String firstName = request.getFirstName() != null ? request.getFirstName().trim() : "";
+        String lastName = request.getLastName() != null ? request.getLastName().trim() : "";
+        String fullName = (firstName + " " + lastName).trim();
+        if (fullName.isEmpty()) {
+            throw new RuntimeException("First name or last name is required");
+        }
+
         Customer customer = Customer.builder()
-                .account(account)
+            .id(accountId)
+                .fullName(fullName)
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .gender(request.getGender() != null ? Customer.Gender.valueOf(request.getGender().toUpperCase()) : null)
                 .dateOfBirth(request.getDateOfBirth())
+                .avatarUrl(request.getAvatarUrl())
                 .build();
         
         Customer saved = customerRepository.save(customer);
@@ -125,7 +137,7 @@ public class CustomerService {
     private CustomerDTO toDTO(Customer customer) {
         return CustomerDTO.builder()
                 .id(customer.getId())
-                .accountId(customer.getAccount().getId())
+                .accountId(customer.getId())
                 .firstName(customer.getFirstName())
                 .lastName(customer.getLastName())
                 .gender(customer.getGender() != null ? customer.getGender().name() : null)

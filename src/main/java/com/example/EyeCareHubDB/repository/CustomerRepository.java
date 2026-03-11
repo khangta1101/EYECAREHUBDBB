@@ -11,11 +11,15 @@ import com.example.EyeCareHubDB.entity.Customer;
 
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
-    
-    Optional<Customer> findByAccountId(Long accountId);
-    
-    @Query("SELECT c FROM Customer c WHERE LOWER(c.firstName) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(c.lastName) LIKE LOWER(CONCAT('%', :name, '%'))")
+
+    @Query("SELECT c FROM Customer c WHERE LOWER(c.fullName) LIKE LOWER(CONCAT('%', :name, '%'))")
     java.util.List<Customer> searchByName(@Param("name") String name);
-    
-    boolean existsByAccountId(Long accountId);
+
+    default Optional<Customer> findByAccountId(Long accountId) {
+        return findById(accountId);
+    }
+
+    default boolean existsByAccountId(Long accountId) {
+        return existsById(accountId);
+    }
 }

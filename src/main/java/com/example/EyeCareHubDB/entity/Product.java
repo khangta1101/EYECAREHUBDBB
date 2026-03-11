@@ -17,6 +17,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,34 +33,35 @@ public class Product {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "\"ProductId\"")
     private Long id;
     
     @Column(nullable = false, length = 200)
     private String name;
     
-    @Column(nullable = false, unique = true, length = 200)
+    @Column(name = "\"SearchTags\"", length = 200)
     private String slug;
     
-    @Column(length = 100)
+    @Column(name = "\"ProductType\"", length = 100)
     private String sku;
     
     @ManyToOne
-    @JoinColumn(name = "category_id", nullable = false)
+    @JoinColumn(name = "\"PrimaryCategoryId\"", nullable = false)
     private Category category;
     
     @Column(length = 100)
     private String brand;
     
-    @Column(length = 2000)
+    @Column(name = "\"Description\"", length = 2000)
     private String shortDescription;
     
-    @Column(columnDefinition = "TEXT")
+    @Transient
     private String fullDescription;
     
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Transient
     private BigDecimal basePrice;
     
-    @Column(precision = 10, scale = 2)
+    @Transient
     private BigDecimal salePrice;
     
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -68,30 +70,31 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductMedia> media = new ArrayList<>();
     
-    @Column(nullable = false)
+    @Column(name = "\"IsActive\"", nullable = false)
     private Boolean isActive = true;
     
-    @Column(nullable = false)
+    @Transient
     private Boolean isFeatured = false;
     
-    @Column(nullable = false)
+    @Transient
     private Integer viewCount = 0;
     
+    @Transient
     private Integer soldCount = 0;
     
-    @Column(columnDefinition = "TEXT")
+    @Transient
     private String metaTitle;
     
-    @Column(columnDefinition = "TEXT")
+    @Transient
     private String metaDescription;
     
-    @Column(columnDefinition = "TEXT")
+    @Transient
     private String metaKeywords;
     
-    @Column(nullable = false, updatable = false)
+    @Column(name = "\"CreatedAt\"", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
     
-    @Column(nullable = false)
+    @Transient
     private LocalDateTime updatedAt = LocalDateTime.now();
     
     @PrePersist
