@@ -1,5 +1,7 @@
 package com.example.EyeCareHubDB.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -13,6 +15,7 @@ import com.example.EyeCareHubDB.service.OrderService;
 
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Order")
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor

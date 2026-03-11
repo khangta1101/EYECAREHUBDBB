@@ -1,5 +1,7 @@
 package com.example.EyeCareHubDB.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -11,6 +13,7 @@ import com.example.EyeCareHubDB.service.FulfillmentService;
 
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Fulfillment")
 @RestController
 @RequestMapping("/api/fulfillment")
 @RequiredArgsConstructor

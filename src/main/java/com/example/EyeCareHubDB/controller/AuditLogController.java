@@ -1,5 +1,7 @@
 package com.example.EyeCareHubDB.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -10,6 +12,7 @@ import com.example.EyeCareHubDB.service.AuditLogService;
 
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Audit Log")
 @RestController
 @RequestMapping("/api/audit-logs")
 @RequiredArgsConstructor

@@ -1,5 +1,7 @@
 package com.example.EyeCareHubDB.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
+@Tag(name = "Payment")
 @RestController
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
