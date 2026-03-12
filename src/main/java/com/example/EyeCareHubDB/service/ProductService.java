@@ -1,6 +1,7 @@
 package com.example.EyeCareHubDB.service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
@@ -22,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional
 public class ProductService {
+
+    private static final Set<String> ALLOWED_PRODUCT_TYPES = Set.of("FRAME", "LENS", "SERVICE");
     
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
@@ -39,9 +42,13 @@ public class ProductService {
     }
     
     public ProductDTO getProductBySlug(String slug) {
-        return productRepository.findBySlug(slug)
+        return getProductBySearchTags(slug);
+    }
+
+    public ProductDTO getProductBySearchTags(String searchTags) {
+        return productRepository.findBySearchTags(searchTags)
                 .map(this::toDTO)
-                .orElseThrow(() -> new RuntimeException("Product not found with slug: " + slug));
+                .orElseThrow(() -> new RuntimeException("Product not found with searchTags: " + searchTags));
     }
     
     public List<ProductDTO> getProductsByCategory(Long categoryId) {
@@ -79,33 +86,24 @@ public class ProductService {
     }
     
     public ProductDTO createProduct(ProductCreateRequest request) {
-        if (productRepository.existsBySlug(request.getSlug())) {
-            throw new RuntimeException("Product with slug already exists: " + request.getSlug());
+        if (request.getSearchTags() != null && !request.getSearchTags().isBlank()
+            && productRepository.existsBySearchTags(request.getSearchTags())) {
+            throw new RuntimeException("Product with SearchTags already exists: " + request.getSearchTags());
         }
         
-        Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found with id: " + request.getCategoryId()));
+        Category category = categoryRepository.findById(request.getPrimaryCategoryId())
+            .orElseThrow(() -> new RuntimeException("Category not found with id: " + request.getPrimaryCategoryId()));
         
-        // Handle productType constraint appropriately
-        String productType = request.getProductType();
-        if (productType == null || productType.trim().isEmpty()) {
-            productType = "FRAME";
-        }
+        String productType = normalizeProductType(request.getProductType());
         
         Product product = Product.builder()
                 .name(request.getName())
-                .slug(request.getSlug())
+            .searchTags(request.getSearchTags())
                 .productType(productType)
                 .category(category)
                 .brand(request.getBrand())
-                .shortDescription(request.getShortDescription())
-                .fullDescription(request.getFullDescription())
-                .basePrice(request.getBasePrice())
-                .salePrice(request.getSalePrice())
-                .isActive(true)
-                .isFeatured(false)
-                .viewCount(0)
-                .soldCount(0)
+            .description(request.getDescription())
+            .isActive(request.getIsActive() == null ? Boolean.TRUE : request.getIsActive())
                 .build();
         
         Product saved = productRepository.save(product);
@@ -121,40 +119,28 @@ public class ProductService {
         if (request.getName() != null) {
             product.setName(request.getName());
         }
-        if (request.getSlug() != null && !request.getSlug().equals(product.getSlug())) {
-            if (productRepository.existsBySlug(request.getSlug())) {
-                throw new RuntimeException("Product with slug already exists: " + request.getSlug());
+        if (request.getSearchTags() != null && !request.getSearchTags().equals(product.getSearchTags())) {
+            if (productRepository.existsBySearchTags(request.getSearchTags())) {
+                throw new RuntimeException("Product with SearchTags already exists: " + request.getSearchTags());
             }
-            product.setSlug(request.getSlug());
+            product.setSearchTags(request.getSearchTags());
         }
         if (request.getProductType() != null) {
-            product.setProductType(request.getProductType());
+            product.setProductType(normalizeProductType(request.getProductType()));
         }
-        if (request.getCategoryId() != null) {
-            Category category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new RuntimeException("Category not found with id: " + request.getCategoryId()));
+        if (request.getPrimaryCategoryId() != null) {
+            Category category = categoryRepository.findById(request.getPrimaryCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found with id: " + request.getPrimaryCategoryId()));
             product.setCategory(category);
         }
         if (request.getBrand() != null) {
             product.setBrand(request.getBrand());
         }
-        if (request.getShortDescription() != null) {
-            product.setShortDescription(request.getShortDescription());
-        }
-        if (request.getFullDescription() != null) {
-            product.setFullDescription(request.getFullDescription());
-        }
-        if (request.getBasePrice() != null) {
-            product.setBasePrice(request.getBasePrice());
-        }
-        if (request.getSalePrice() != null) {
-            product.setSalePrice(request.getSalePrice());
+        if (request.getDescription() != null) {
+            product.setDescription(request.getDescription());
         }
         if (request.getIsActive() != null) {
             product.setIsActive(request.getIsActive());
-        }
-        if (request.getIsFeatured() != null) {
-            product.setIsFeatured(request.getIsFeatured());
         }
         
         Product updated = productRepository.save(product);
@@ -168,31 +154,29 @@ public class ProductService {
         productRepository.save(product);
     }
     
-    public void incrementViewCount(Long id) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
-        product.setViewCount(product.getViewCount() + 1);
-        productRepository.save(product);
+    private String normalizeProductType(String rawType) {
+        String productType = rawType;
+        if (productType == null || productType.trim().isEmpty()) {
+            productType = "FRAME";
+        }
+        productType = productType.trim().toUpperCase();
+        if (!ALLOWED_PRODUCT_TYPES.contains(productType)) {
+            throw new RuntimeException("Invalid ProductType. Allowed values: FRAME, LENS, SERVICE");
+        }
+        return productType;
     }
     
     private ProductDTO toDTO(Product product) {
         return ProductDTO.builder()
-                .id(product.getId())
+                .productId(product.getId())
                 .name(product.getName())
-                .slug(product.getSlug())
+                .searchTags(product.getSearchTags())
                 .productType(product.getProductType())
-                .categoryId(product.getCategory().getId())
+                .primaryCategoryId(product.getCategory().getId())
                 .brand(product.getBrand())
-                .shortDescription(product.getShortDescription())
-                .fullDescription(product.getFullDescription())
-                .basePrice(product.getBasePrice())
-                .salePrice(product.getSalePrice())
+                .description(product.getDescription())
                 .isActive(product.getIsActive())
-                .isFeatured(product.getIsFeatured())
-                .viewCount(product.getViewCount())
-                .soldCount(product.getSoldCount())
                 .createdAt(product.getCreatedAt())
-                .updatedAt(product.getUpdatedAt())
                 .build();
     }
 }

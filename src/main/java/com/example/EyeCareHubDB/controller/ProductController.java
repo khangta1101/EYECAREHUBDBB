@@ -40,6 +40,12 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductById(id));
     }
     
+    @GetMapping("/search-tags/{searchTags}")
+    public ResponseEntity<ProductDTO> getProductBySearchTags(@PathVariable String searchTags) {
+        return ResponseEntity.ok(productService.getProductBySearchTags(searchTags));
+    }
+
+    // Backward compatible alias for clients still using /slug/{slug}
     @GetMapping("/slug/{slug}")
     public ResponseEntity<ProductDTO> getProductBySlug(@PathVariable String slug) {
         return ResponseEntity.ok(productService.getProductBySlug(slug));

@@ -36,11 +36,11 @@ public class Product {
     @Column(name = "\"ProductId\"")
     private Long id;
     
-    @Column(nullable = false, length = 200)
+    @Column(name = "\"Name\"", nullable = false, length = 200)
     private String name;
     
     @Column(name = "\"SearchTags\"", length = 200)
-    private String slug;
+    private String searchTags;
     
     @Column(name = "\"ProductType\"", length = 100)
     private String productType;
@@ -49,11 +49,11 @@ public class Product {
     @JoinColumn(name = "\"PrimaryCategoryId\"", nullable = false)
     private Category category;
     
-    @Column(length = 100)
+    @Column(name = "\"Brand\"", length = 100)
     private String brand;
     
     @Column(name = "\"Description\"", length = 2000)
-    private String shortDescription;
+    private String description;
     
     @Transient
     private String fullDescription;

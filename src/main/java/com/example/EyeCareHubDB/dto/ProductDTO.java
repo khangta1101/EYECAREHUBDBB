@@ -1,6 +1,5 @@
 package com.example.EyeCareHubDB.dto;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import lombok.AllArgsConstructor;
@@ -13,21 +12,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ProductDTO {
-    private Long id;
+    private Long productId;
     private String name;
-    private String slug;
+    private String searchTags;
     private String productType;
-    private Long categoryId;
+    private Long primaryCategoryId;
     private String brand;
-    private String shortDescription;
-    private String fullDescription;
-    private BigDecimal basePrice;
-    private BigDecimal salePrice;
+    private String description;
     private Boolean isActive;
-    private Boolean isFeatured;
-    private Integer viewCount;
-    private Integer soldCount;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }
 

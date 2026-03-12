@@ -15,7 +15,7 @@ import com.example.EyeCareHubDB.entity.Product;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
     
-    Optional<Product> findBySlug(String slug);
+    Optional<Product> findBySearchTags(String searchTags);
     
     Optional<Product> findByProductType(String productType);
     
@@ -42,7 +42,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p WHERE p.isActive = true ORDER BY p.createdAt DESC")
     Page<Product> findProductsOnSale(Pageable pageable);
     
-    boolean existsBySlug(String slug);
+    boolean existsBySearchTags(String searchTags);
     
     boolean existsByProductType(String productType);
 }

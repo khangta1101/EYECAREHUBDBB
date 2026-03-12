@@ -1,6 +1,6 @@
 package com.example.EyeCareHubDB.dto;
 
-import java.math.BigDecimal;
+import com.fasterxml.jackson.annotation.JsonAlias;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,12 +13,13 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ProductCreateRequest {
     private String name;
-    private String slug;
+    @JsonAlias("slug")
+    private String searchTags;
     private String productType;
-    private Long categoryId;
+    @JsonAlias("categoryId")
+    private Long primaryCategoryId;
     private String brand;
-    private String shortDescription;
-    private String fullDescription;
-    private BigDecimal basePrice;
-    private BigDecimal salePrice;
+    @JsonAlias("shortDescription")
+    private String description;
+    private Boolean isActive;
 }

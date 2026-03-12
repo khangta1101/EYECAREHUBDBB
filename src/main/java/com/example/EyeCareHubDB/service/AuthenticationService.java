@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -30,11 +31,14 @@ import lombok.RequiredArgsConstructor;
 public class AuthenticationService {
     private static final int OTP_EXPIRE_MINUTES = 5;
     private static final int OTP_LENGTH = 6;
-    
+
     private final AccountRepository accountRepository;
     private final CustomerRepository customerRepository;
     private final JavaMailSender mailSender;
-    
+
+    @Value("${spring.mail.username:}")
+    private String mailUsername;
+
     private final Map<String, OtpEntry> otpStore = new ConcurrentHashMap<>();
     
     public Account register(RegisterRequest request) {
@@ -199,12 +203,16 @@ public class AuthenticationService {
     private void sendOtpEmail(String email, String otp, LocalDateTime expiresAt) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            if (mailUsername != null && !mailUsername.isBlank()) {
+                message.setFrom(mailUsername.trim());
+            }
             message.setTo(email);
             message.setSubject("EyeCareHub - Password Reset OTP");
             message.setText("Your OTP code is: " + otp + "\nThis OTP expires at: " + expiresAt + "\nIf you did not request this, please ignore this email.");
             mailSender.send(message);
         } catch (Exception ex) {
-            throw new RuntimeException("Cannot send OTP email. Please check mail server configuration.");
+            String details = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
+            throw new RuntimeException("Cannot send OTP email: " + details);
         }
     }
 
