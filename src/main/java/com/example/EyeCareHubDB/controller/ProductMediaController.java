@@ -15,13 +15,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.EyeCareHubDB.dto.ProductMediaCreateRequest;
 import com.example.EyeCareHubDB.dto.ProductMediaDTO;
+import com.example.EyeCareHubDB.dto.ProductMediaUpdateRequest;
 import com.example.EyeCareHubDB.service.ProductMediaService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -50,6 +53,16 @@ public class ProductMediaController {
     public ResponseEntity<List<ProductMediaDTO>> getMediaByProductId(@PathVariable Long productId) {
         return ResponseEntity.ok(mediaService.getMediaByProductId(productId));
     }
+
+    @GetMapping("/product/{productId}/all")
+    public ResponseEntity<List<ProductMediaDTO>> getAllMediaByProductId(@PathVariable Long productId) {
+        return ResponseEntity.ok(mediaService.getAllMediaByProductId(productId));
+    }
+
+    @GetMapping("/variant/{variantId}")
+    public ResponseEntity<List<ProductMediaDTO>> getMediaByVariantId(@PathVariable Long variantId) {
+        return ResponseEntity.ok(mediaService.getMediaByVariantId(variantId));
+    }
     
     @GetMapping("/{id}")
     public ResponseEntity<ProductMediaDTO> getMediaById(@PathVariable Long id) {
@@ -68,6 +81,19 @@ public class ProductMediaController {
         String fileDownloadUri = saveUploadedFile(file);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(mediaService.addMedia(productId, variantId, fileDownloadUri, type, displayOrder));
+    }
+
+    @PostMapping(value = "/product/{productId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ProductMediaDTO> addMediaByUrl(
+            @PathVariable Long productId,
+            @RequestBody ProductMediaCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mediaService.addMediaByUrl(
+                        productId,
+                        request.getVariantId(),
+                        request.getUrl(),
+                        request.getType(),
+                        request.getDisplayOrder()));
     }
     
     @PostMapping(value = "/product/{productId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -90,6 +116,14 @@ public class ProductMediaController {
             @RequestParam(value = "displayOrder", required = false) Integer displayOrder) {
         String fileDownloadUri = file != null ? saveUploadedFile(file) : null;
         return ResponseEntity.ok(mediaService.updateMedia(id, fileDownloadUri, type, displayOrder));
+    }
+
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ProductMediaDTO> updateMediaByUrl(
+            @PathVariable Long id,
+            @RequestBody ProductMediaUpdateRequest request) {
+        return ResponseEntity.ok(
+                mediaService.updateMediaByUrl(id, request.getUrl(), request.getType(), request.getDisplayOrder()));
     }
     
     @DeleteMapping("/{id}")

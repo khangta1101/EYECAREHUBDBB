@@ -26,7 +26,13 @@ public class ProductMediaService {
     private final ProductVariantRepository variantRepository;
     
     public List<ProductMediaDTO> getMediaByProductId(Long productId) {
-        return mediaRepository.findMediaByProductId(productId).stream()
+        return mediaRepository.findProductLevelMediaByProductId(productId).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ProductMediaDTO> getAllMediaByProductId(Long productId) {
+        return mediaRepository.findAllMediaByProductId(productId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -41,6 +47,18 @@ public class ProductMediaService {
         return mediaRepository.findById(id)
                 .map(this::toDTO)
                 .orElseThrow(() -> new RuntimeException("Product media not found with id: " + id));
+    }
+
+    public ProductMediaDTO addMediaByUrl(
+            Long productId,
+            Long variantId,
+            String url,
+            String type,
+            Integer displayOrder) {
+        if (url == null || url.isBlank()) {
+            throw new RuntimeException("Url is required");
+        }
+        return addMedia(productId, variantId, url.trim(), type, displayOrder);
     }
     
 
@@ -105,6 +123,11 @@ public class ProductMediaService {
         
         ProductMedia updated = mediaRepository.save(media);
         return toDTO(updated);
+    }
+
+    public ProductMediaDTO updateMediaByUrl(Long id, String url, String type, Integer displayOrder) {
+        String normalizedUrl = (url != null && !url.isBlank()) ? url.trim() : null;
+        return updateMedia(id, normalizedUrl, type, displayOrder);
     }
     
     public void deleteMedia(Long id) {

@@ -17,7 +17,9 @@ import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "\"ProductVariants\"")
@@ -34,6 +36,8 @@ public class ProductVariant {
     
     @ManyToOne
     @JoinColumn(name = "\"ProductId\"", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Product product;
     
     @Column(name = "\"SKU\"", nullable = false, unique = true, length = 100)

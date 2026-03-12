@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 
 import com.example.EyeCareHubDB.dto.ProductCreateRequest;
 import com.example.EyeCareHubDB.dto.ProductDTO;
+import com.example.EyeCareHubDB.dto.ProductDetailResponse;
 import com.example.EyeCareHubDB.dto.ProductUpdateRequest;
+import com.example.EyeCareHubDB.dto.CategoryDTO;
 import com.example.EyeCareHubDB.entity.Category;
 import com.example.EyeCareHubDB.entity.Product;
 import com.example.EyeCareHubDB.repository.CategoryRepository;
@@ -28,6 +30,8 @@ public class ProductService {
     
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final ProductVariantService productVariantService;
+    private final ProductMediaService productMediaService;
     
     public List<ProductDTO> getAllProducts() {
         return productRepository.findByIsActiveTrue().stream()
@@ -40,15 +44,31 @@ public class ProductService {
                 .map(this::toDTO)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
     }
+
+    public ProductDetailResponse getProductDetailById(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+        return toDetailResponse(product);
+    }
     
     public ProductDTO getProductBySlug(String slug) {
         return getProductBySearchTags(slug);
+    }
+
+    public ProductDetailResponse getProductDetailBySlug(String slug) {
+        return getProductDetailBySearchTags(slug);
     }
 
     public ProductDTO getProductBySearchTags(String searchTags) {
         return productRepository.findBySearchTags(searchTags)
                 .map(this::toDTO)
                 .orElseThrow(() -> new RuntimeException("Product not found with searchTags: " + searchTags));
+    }
+
+    public ProductDetailResponse getProductDetailBySearchTags(String searchTags) {
+        Product product = productRepository.findBySearchTags(searchTags)
+                .orElseThrow(() -> new RuntimeException("Product not found with searchTags: " + searchTags));
+        return toDetailResponse(product);
     }
     
     public List<ProductDTO> getProductsByCategory(Long categoryId) {
@@ -177,6 +197,39 @@ public class ProductService {
                 .description(product.getDescription())
                 .isActive(product.getIsActive())
                 .createdAt(product.getCreatedAt())
+                .build();
+    }
+
+    private ProductDetailResponse toDetailResponse(Product product) {
+        Category category = product.getCategory();
+        CategoryDTO categoryDTO = category == null ? null : CategoryDTO.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .slug(category.getSlug())
+                .parentId(category.getParent() != null ? category.getParent().getId() : null)
+                .isActive(category.getIsActive())
+                .createdAt(category.getCreatedAt())
+                .build();
+
+        return ProductDetailResponse.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .slug(product.getSearchTags())
+                .sku(null) // product-level SKU not modeled; variants carry SKU
+                .category(categoryDTO)
+                .brand(product.getBrand())
+                .shortDescription(product.getDescription())
+                .fullDescription(product.getFullDescription())
+                .basePrice(product.getBasePrice())
+                .salePrice(product.getSalePrice())
+                .variants(productVariantService.getVariantsByProductId(product.getId()))
+                .media(productMediaService.getAllMediaByProductId(product.getId()))
+                .viewCount(product.getViewCount())
+                .soldCount(product.getSoldCount())
+                .isActive(product.getIsActive())
+                .isFeatured(product.getIsFeatured())
+                .createdAt(product.getCreatedAt())
+                .updatedAt(product.getUpdatedAt())
                 .build();
     }
 }

@@ -18,10 +18,12 @@ import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
-@Table(name = "ProductMedia")
+@Table(name = "\"ProductMedia\"")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -35,10 +37,14 @@ public class ProductMedia {
     
     @ManyToOne
     @JoinColumn(name = "\"ProductId\"", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Product product;
     
     @ManyToOne
     @JoinColumn(name = "\"VariantId\"")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private ProductVariant variant;
     
     @Enumerated(EnumType.STRING)

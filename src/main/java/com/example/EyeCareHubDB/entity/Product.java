@@ -21,7 +21,9 @@ import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "products")
@@ -47,6 +49,8 @@ public class Product {
     
     @ManyToOne
     @JoinColumn(name = "\"PrimaryCategoryId\"", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Category category;
     
     @Column(name = "\"Brand\"", length = 100)
@@ -66,10 +70,14 @@ public class Product {
     
     @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<ProductVariant> variants = new ArrayList<>();
     
     @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<ProductMedia> media = new ArrayList<>();
     
     @Builder.Default

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.EyeCareHubDB.dto.ProductCreateRequest;
 import com.example.EyeCareHubDB.dto.ProductDTO;
+import com.example.EyeCareHubDB.dto.ProductDetailResponse;
 import com.example.EyeCareHubDB.dto.ProductUpdateRequest;
 import com.example.EyeCareHubDB.service.ProductService;
 
@@ -39,16 +40,31 @@ public class ProductController {
     public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
+
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<ProductDetailResponse> getProductDetailById(@PathVariable Long id) {
+        return ResponseEntity.ok(productService.getProductDetailById(id));
+    }
     
     @GetMapping("/search-tags/{searchTags}")
     public ResponseEntity<ProductDTO> getProductBySearchTags(@PathVariable String searchTags) {
         return ResponseEntity.ok(productService.getProductBySearchTags(searchTags));
     }
 
+    @GetMapping("/search-tags/{searchTags}/detail")
+    public ResponseEntity<ProductDetailResponse> getProductDetailBySearchTags(@PathVariable String searchTags) {
+        return ResponseEntity.ok(productService.getProductDetailBySearchTags(searchTags));
+    }
+
     // Backward compatible alias for clients still using /slug/{slug}
     @GetMapping("/slug/{slug}")
     public ResponseEntity<ProductDTO> getProductBySlug(@PathVariable String slug) {
         return ResponseEntity.ok(productService.getProductBySlug(slug));
+    }
+
+    @GetMapping("/slug/{slug}/detail")
+    public ResponseEntity<ProductDetailResponse> getProductDetailBySlug(@PathVariable String slug) {
+        return ResponseEntity.ok(productService.getProductDetailBySlug(slug));
     }
     
     @GetMapping("/category/{categoryId}")
