@@ -20,11 +20,8 @@ public interface ProductVariantRepository extends JpaRepository<ProductVariant, 
     
     boolean existsBySku(String sku);
     
-    @Query("SELECT pv FROM ProductVariant pv WHERE pv.product.id = :productId ORDER BY pv.displayOrder")
-    List<ProductVariant> findByProductIdOrderByDisplayOrder(@Param("productId") Long productId);
-    
     @Query("SELECT pv FROM ProductVariant pv WHERE pv.sku = :sku AND pv.isActive = true")
-    Optional<ProductVariant> findActiveBySkup(@Param("sku") String sku);
+    Optional<ProductVariant> findActiveBySku(@Param("sku") String sku);
     
     @Query("SELECT COALESCE(SUM(pv.stockQuantity), 0) FROM ProductVariant pv WHERE pv.product.id = :productId")
     Integer getTotalStockByProductId(@Param("productId") Long productId);

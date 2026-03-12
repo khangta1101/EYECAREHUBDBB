@@ -57,42 +57,30 @@ public class ProductMediaController {
         return ResponseEntity.ok(mediaService.getMediaById(id));
     }
     
-    @GetMapping("/product/{productId}/primary")
-    public ResponseEntity<ProductMediaDTO> getPrimaryMedia(@PathVariable Long productId) {
-        return ResponseEntity.ok(mediaService.getPrimaryMedia(productId));
-    }
-    
-    @GetMapping("/product/{productId}/images")
-    public ResponseEntity<List<ProductMediaDTO>> getImagesByProductId(@PathVariable Long productId) {
-        return ResponseEntity.ok(mediaService.getImagesByProductId(productId));
-    }
+
     
     @PostMapping(value = "/product/{productId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductMediaDTO> addMedia(
             @PathVariable Long productId,
             @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "variantId", required = false) Long variantId,
             @RequestParam(value = "type", required = false, defaultValue = "IMAGE") String type,
-            @RequestParam(value = "altText", required = false) String altText,
-            @RequestParam(value = "title", required = false) String title,
-            @RequestParam(value = "displayOrder", required = false, defaultValue = "0") Integer displayOrder,
-            @RequestParam(value = "isPrimary", required = false, defaultValue = "false") Boolean isPrimary) {
+            @RequestParam(value = "displayOrder", required = false, defaultValue = "0") Integer displayOrder) {
         String fileDownloadUri = saveUploadedFile(file);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(mediaService.addMedia(productId, fileDownloadUri, type, altText, title, displayOrder, isPrimary));
+                .body(mediaService.addMedia(productId, variantId, fileDownloadUri, type, displayOrder));
     }
     
     @PostMapping(value = "/product/{productId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductMediaDTO> uploadImage(
             @PathVariable Long productId,
             @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "variantId", required = false) Long variantId,
             @RequestParam(value = "type", required = false, defaultValue = "IMAGE") String type,
-            @RequestParam(value = "altText", required = false) String altText,
-            @RequestParam(value = "title", required = false) String title,
-            @RequestParam(value = "displayOrder", required = false, defaultValue = "0") Integer displayOrder,
-            @RequestParam(value = "isPrimary", required = false, defaultValue = "false") Boolean isPrimary) {
+            @RequestParam(value = "displayOrder", required = false, defaultValue = "0") Integer displayOrder) {
         String fileDownloadUri = saveUploadedFile(file);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(mediaService.addMedia(productId, fileDownloadUri, type, altText, title, displayOrder, isPrimary));
+                .body(mediaService.addMedia(productId, variantId, fileDownloadUri, type, displayOrder));
     }
     
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -100,12 +88,9 @@ public class ProductMediaController {
             @PathVariable Long id,
             @RequestPart(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "type", required = false) String type,
-            @RequestParam(value = "altText", required = false) String altText,
-            @RequestParam(value = "title", required = false) String title,
-            @RequestParam(value = "displayOrder", required = false) Integer displayOrder,
-            @RequestParam(value = "isPrimary", required = false) Boolean isPrimary) {
+            @RequestParam(value = "displayOrder", required = false) Integer displayOrder) {
         String fileDownloadUri = file != null ? saveUploadedFile(file) : null;
-        return ResponseEntity.ok(mediaService.updateMedia(id, fileDownloadUri, type, altText, title, displayOrder, isPrimary));
+        return ResponseEntity.ok(mediaService.updateMedia(id, fileDownloadUri, type, displayOrder));
     }
     
     @DeleteMapping("/{id}")

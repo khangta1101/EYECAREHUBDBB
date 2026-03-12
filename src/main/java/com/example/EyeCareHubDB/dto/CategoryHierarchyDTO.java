@@ -15,7 +15,5 @@ public class CategoryHierarchyDTO {
     private Long id;
     private String name;
     private String slug;
-    private String imageUrl;
-    private Integer displayOrder;
     private List<CategoryHierarchyDTO> subCategories;
 }

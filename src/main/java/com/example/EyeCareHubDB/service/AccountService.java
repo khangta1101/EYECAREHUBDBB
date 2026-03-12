@@ -44,8 +44,11 @@ public class AccountService {
             throw new RuntimeException("Email already exists: " + request.getEmail());
         }
         
+        String generatedUsername = request.getEmail().split("@")[0] + "_" + System.currentTimeMillis();
+        
         Account account = Account.builder()
                 .email(request.getEmail())
+                .username(generatedUsername)
                 .passwordHash(request.getPasswordHash())
                 .phoneNumber(request.getPhoneNumber())
                 .role(request.getRole() != null ? Account.AccountRole.valueOf(request.getRole()) : Account.AccountRole.CUSTOMER)

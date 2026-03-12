@@ -17,16 +17,14 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     
     Optional<Category> findByName(String name);
     
-    List<Category> findByParentIdOrderByDisplayOrder(Long parentId);
+    List<Category> findByParentId(Long parentId);
     
     List<Category> findByIsActiveTrue();
     
-    List<Category> findByIsActiveTrueOrderByDisplayOrder();
-    
-    @Query("SELECT c FROM Category c WHERE c.parent IS NULL ORDER BY c.displayOrder")
+    @Query("SELECT c FROM Category c WHERE c.parent IS NULL")
     List<Category> findRootCategories();
     
-    @Query("SELECT c FROM Category c WHERE c.parent.id = :parentId ORDER BY c.displayOrder")
+    @Query("SELECT c FROM Category c WHERE c.parent.id = :parentId")
     List<Category> findSubCategories(@Param("parentId") Long parentId);
     
     boolean existsBySlug(String slug);

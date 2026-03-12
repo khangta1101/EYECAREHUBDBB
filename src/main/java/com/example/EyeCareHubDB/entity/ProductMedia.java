@@ -14,6 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,35 +30,45 @@ public class ProductMedia {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "\"MediaId\"")
     private Long id;
     
     @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false)
+    @JoinColumn(name = "\"ProductId\"", nullable = false)
     private Product product;
     
+    @ManyToOne
+    @JoinColumn(name = "\"VariantId\"")
+    private ProductVariant variant;
+    
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "\"MediaType\"", nullable = false, length = 20)
+    @Builder.Default
     private MediaType type = MediaType.IMAGE;
     
-    @Column(nullable = false, length = 500)
+    @Column(name = "\"Url\"", nullable = false, length = 500)
     private String url;
     
-    @Column(length = 200)
+    @Transient // Not in DB
     private String altText;
     
-    @Column(length = 500)
+    @Transient // Not in DB
     private String title;
     
-    @Column(nullable = false)
+    @Column(name = "\"SortOrder\"", nullable = false)
+    @Builder.Default
     private Integer displayOrder = 0;
     
-    @Column(nullable = false)
+    @Transient // Not in DB
+    @Builder.Default
     private Boolean isPrimary = false;
     
-    @Column(nullable = false, updatable = false)
+    @Column(name = "\"CreatedAt\"", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
     
-    @Column(nullable = false)
+    @Transient // Not in DB
+    @Builder.Default
     private LocalDateTime updatedAt = LocalDateTime.now();
     
     @PrePersist

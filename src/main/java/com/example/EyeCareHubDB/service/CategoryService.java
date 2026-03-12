@@ -22,7 +22,7 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     
     public List<CategoryDTO> getAllCategories() {
-        return categoryRepository.findByIsActiveTrueOrderByDisplayOrder().stream()
+        return categoryRepository.findByIsActiveTrue().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -65,10 +65,7 @@ public class CategoryService {
         Category category = Category.builder()
                 .name(request.getName())
                 .slug(request.getSlug())
-                .description(request.getDescription())
-                .imageUrl(request.getImageUrl())
                 .parent(parent)
-                .displayOrder(request.getDisplayOrder() != null ? request.getDisplayOrder() : 0)
                 .isActive(true)
                 .build();
         
@@ -89,19 +86,10 @@ public class CategoryService {
             }
             category.setSlug(request.getSlug());
         }
-        if (request.getDescription() != null) {
-            category.setDescription(request.getDescription());
-        }
-        if (request.getImageUrl() != null) {
-            category.setImageUrl(request.getImageUrl());
-        }
         if (request.getParentId() != null) {
             Category parent = categoryRepository.findById(request.getParentId())
                     .orElseThrow(() -> new RuntimeException("Parent category not found with id: " + request.getParentId()));
             category.setParent(parent);
-        }
-        if (request.getDisplayOrder() != null) {
-            category.setDisplayOrder(request.getDisplayOrder());
         }
         if (request.getIsActive() != null) {
             category.setIsActive(request.getIsActive());
@@ -123,13 +111,9 @@ public class CategoryService {
                 .id(category.getId())
                 .name(category.getName())
                 .slug(category.getSlug())
-                .description(category.getDescription())
-                .imageUrl(category.getImageUrl())
                 .parentId(category.getParent() != null ? category.getParent().getId() : null)
-                .displayOrder(category.getDisplayOrder())
                 .isActive(category.getIsActive())
                 .createdAt(category.getCreatedAt())
-                .updatedAt(category.getUpdatedAt())
                 .build();
     }
 }

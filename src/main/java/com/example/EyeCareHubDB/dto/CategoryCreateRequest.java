@@ -13,9 +13,6 @@ import lombok.NoArgsConstructor;
 public class CategoryCreateRequest {
     private String name;
     private String slug;
-    private String description;
-    private String imageUrl;
     @Schema(requiredMode = Schema.RequiredMode.NOT_REQUIRED, nullable = true)
     private Long parentId;
-    private Integer displayOrder;
 }

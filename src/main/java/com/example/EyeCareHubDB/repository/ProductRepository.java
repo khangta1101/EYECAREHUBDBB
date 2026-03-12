@@ -17,7 +17,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     
     Optional<Product> findBySlug(String slug);
     
-    Optional<Product> findBySku(String sku);
+    Optional<Product> findByProductType(String productType);
     
     List<Product> findByCategoryId(Long categoryId);
     
@@ -44,5 +44,5 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     
     boolean existsBySlug(String slug);
     
-    boolean existsBySku(String sku);
+    boolean existsByProductType(String productType);
 }

@@ -13,9 +13,6 @@ import lombok.NoArgsConstructor;
 public class CategoryUpdateRequest {
     private String name;
     private String slug;
-    private String description;
-    private String imageUrl;
     private Long parentId;
-    private Integer displayOrder;
     private Boolean isActive;
 }

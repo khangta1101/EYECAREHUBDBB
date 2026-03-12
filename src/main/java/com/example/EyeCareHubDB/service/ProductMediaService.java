@@ -23,7 +23,13 @@ public class ProductMediaService {
     private final ProductRepository productRepository;
     
     public List<ProductMediaDTO> getMediaByProductId(Long productId) {
-        return mediaRepository.findByProductIdOrderByDisplayOrder(productId).stream()
+        return mediaRepository.findMediaByProductId(productId).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+    
+    public List<ProductMediaDTO> getMediaByVariantId(Long variantId) {
+        return mediaRepository.findMediaByVariantId(variantId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -34,40 +40,31 @@ public class ProductMediaService {
                 .orElseThrow(() -> new RuntimeException("Product media not found with id: " + id));
     }
     
-    public ProductMediaDTO getPrimaryMedia(Long productId) {
-        return mediaRepository.findPrimaryMediaByProductId(productId)
-                .map(this::toDTO)
-                .orElseThrow(() -> new RuntimeException("No primary media found for product: " + productId));
-    }
-    
-    public List<ProductMediaDTO> getImagesByProductId(Long productId) {
-        return mediaRepository.findByProductIdAndType(productId, ProductMedia.MediaType.IMAGE).stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
+
     
     public ProductMediaDTO addMedia(
             Long productId,
+            Long variantId,
             String fileUrl,
             String type,
-            String altText,
-            String title,
-            Integer displayOrder,
-            Boolean isPrimary) {
+            Integer displayOrder) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
         
-        ProductMedia media = ProductMedia.builder()
+        ProductMedia.ProductMediaBuilder builder = ProductMedia.builder()
                 .product(product)
-                .type(ProductMedia.MediaType.valueOf(type != null ? type : "IMAGE"))
                 .url(fileUrl)
-                .altText(altText)
-                .title(title)
-                .displayOrder(displayOrder != null ? displayOrder : 0)
-                .isPrimary(isPrimary != null ? isPrimary : false)
-                .build();
+                .displayOrder(displayOrder != null ? displayOrder : 0);
         
-        ProductMedia saved = mediaRepository.save(media);
+        if (type != null) {
+            try {
+                builder.type(ProductMedia.MediaType.valueOf(type.toUpperCase()));
+            } catch (Exception e) {
+                builder.type(ProductMedia.MediaType.IMAGE);
+            }
+        }
+        
+        ProductMedia saved = mediaRepository.save(builder.build());
         return toDTO(saved);
     }
     
@@ -75,30 +72,22 @@ public class ProductMediaService {
             Long id,
             String fileUrl,
             String type,
-            String altText,
-            String title,
-            Integer displayOrder,
-            Boolean isPrimary) {
+            Integer displayOrder) {
         ProductMedia media = mediaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product media not found with id: " + id));
         
         if (type != null) {
-            media.setType(ProductMedia.MediaType.valueOf(type));
+            try {
+                media.setType(ProductMedia.MediaType.valueOf(type.toUpperCase()));
+            } catch (Exception e) {
+                // ignore or default
+            }
         }
         if (fileUrl != null) {
             media.setUrl(fileUrl);
         }
-        if (altText != null) {
-            media.setAltText(altText);
-        }
-        if (title != null) {
-            media.setTitle(title);
-        }
         if (displayOrder != null) {
             media.setDisplayOrder(displayOrder);
-        }
-        if (isPrimary != null) {
-            media.setIsPrimary(isPrimary);
         }
         
         ProductMedia updated = mediaRepository.save(media);
@@ -112,35 +101,17 @@ public class ProductMediaService {
         mediaRepository.deleteById(id);
     }
     
-    public void setPrimaryMedia(Long productId, Long mediaId) {
-        ProductMedia media = mediaRepository.findById(mediaId)
-                .orElseThrow(() -> new RuntimeException("Product media not found with id: " + mediaId));
-        
-        if (!media.getProduct().getId().equals(productId)) {
-            throw new RuntimeException("Media does not belong to this product");
-        }
-        
-        mediaRepository.findPrimaryMediaByProductId(productId).ifPresent(primaryMedia -> {
-            primaryMedia.setIsPrimary(false);
-            mediaRepository.save(primaryMedia);
-        });
-        
-        media.setIsPrimary(true);
-        mediaRepository.save(media);
-    }
+
     
     private ProductMediaDTO toDTO(ProductMedia media) {
         return ProductMediaDTO.builder()
                 .id(media.getId())
                 .productId(media.getProduct().getId())
+                .variantId(media.getVariant() != null ? media.getVariant().getId() : null)
                 .type(media.getType().name())
                 .url(media.getUrl())
-                .altText(media.getAltText())
-                .title(media.getTitle())
                 .displayOrder(media.getDisplayOrder())
-                .isPrimary(media.getIsPrimary())
                 .createdAt(media.getCreatedAt())
-                .updatedAt(media.getUpdatedAt())
                 .build();
     }
 }

@@ -14,13 +14,10 @@ import lombok.NoArgsConstructor;
 public class ProductMediaDTO {
     private Long id;
     private Long productId;
+    private Long variantId;
     private String type;
     private String url;
-    private String altText;
-    private String title;
     private Integer displayOrder;
-    private Boolean isPrimary;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }
 

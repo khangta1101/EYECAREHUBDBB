@@ -15,20 +15,16 @@ import lombok.NoArgsConstructor;
 public class ProductVariantDTO {
     private Long id;
     private Long productId;
-    private String sku;
+    private String variantName;
     private String color;
     private String size;
     private String material;
-    private String lensType;
-    private String frameMaterial;
-    private String frameShape;
-    private BigDecimal additionalPrice;
+    private String attributesJson;
+    private String currency;
+    private BigDecimal basePrice;
+    private BigDecimal salePrice;
     private Integer stockQuantity;
-    private Integer reservedQuantity;
-    private String imageUrl;
     private Boolean isActive;
-    private Integer displayOrder;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }
 

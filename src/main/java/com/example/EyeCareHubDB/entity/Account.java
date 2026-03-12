@@ -47,10 +47,12 @@ public class Account {
     @Column(name = "\"RoleCode\"", nullable = false, length = 20)
     private AccountRole role ;
     
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "\"Status\"", nullable = false, length = 20)
     private AccountStatus status = AccountStatus.ACTIVE;
     
+    @Builder.Default
     @Column(name = "\"CreatedAt\"", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
     

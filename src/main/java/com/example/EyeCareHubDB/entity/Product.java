@@ -43,7 +43,7 @@ public class Product {
     private String slug;
     
     @Column(name = "\"ProductType\"", length = 100)
-    private String sku;
+    private String productType;
     
     @ManyToOne
     @JoinColumn(name = "\"PrimaryCategoryId\"", nullable = false)
@@ -64,21 +64,27 @@ public class Product {
     @Transient
     private BigDecimal salePrice;
     
+    @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductVariant> variants = new ArrayList<>();
     
+    @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductMedia> media = new ArrayList<>();
     
+    @Builder.Default
     @Column(name = "\"IsActive\"", nullable = false)
     private Boolean isActive = true;
     
+    @Builder.Default
     @Transient
     private Boolean isFeatured = false;
     
+    @Builder.Default
     @Transient
     private Integer viewCount = 0;
     
+    @Builder.Default
     @Transient
     private Integer soldCount = 0;
     
@@ -91,9 +97,11 @@ public class Product {
     @Transient
     private String metaKeywords;
     
+    @Builder.Default
     @Column(name = "\"CreatedAt\"", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
     
+    @Builder.Default
     @Transient
     private LocalDateTime updatedAt = LocalDateTime.now();
     

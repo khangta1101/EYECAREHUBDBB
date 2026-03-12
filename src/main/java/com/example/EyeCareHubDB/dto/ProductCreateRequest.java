@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class ProductCreateRequest {
     private String name;
     private String slug;
-    private String sku;
+    private String productType;
     private Long categoryId;
     private String brand;
     private String shortDescription;

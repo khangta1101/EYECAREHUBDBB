@@ -12,8 +12,5 @@ import lombok.NoArgsConstructor;
 public class ProductMediaUpdateRequest {
     private String type;
     private String url;
-    private String altText;
-    private String title;
     private Integer displayOrder;
-    private Boolean isPrimary;
 }

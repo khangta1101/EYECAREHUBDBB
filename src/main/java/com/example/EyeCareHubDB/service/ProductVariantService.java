@@ -26,7 +26,7 @@ public class ProductVariantService {
     private final ProductRepository productRepository;
     
     public List<ProductVariantDTO> getVariantsByProductId(Long productId) {
-        return variantRepository.findByProductIdOrderByDisplayOrder(productId).stream()
+        return variantRepository.findByProductId(productId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -60,17 +60,16 @@ public class ProductVariantService {
         ProductVariant variant = ProductVariant.builder()
                 .product(product)
                 .sku(request.getSku())
+                .variantName(request.getVariantName())
                 .color(request.getColor())
                 .size(request.getSize())
                 .material(request.getMaterial())
-                .lensType(request.getLensType())
-                .frameMaterial(request.getFrameMaterial())
-                .frameShape(request.getFrameShape())
-                .additionalPrice(request.getAdditionalPrice())
+                .attributesJson(request.getAttributesJson())
+                .currency(request.getCurrency() != null ? request.getCurrency() : "VND")
+                .basePrice(request.getBasePrice())
+                .salePrice(request.getSalePrice())
                 .stockQuantity(request.getStockQuantity() != null ? request.getStockQuantity() : 0)
-                .reservedQuantity(0)
                 .isActive(true)
-                .displayOrder(0)
                 .build();
         
         ProductVariant saved = variantRepository.save(variant);
@@ -81,6 +80,9 @@ public class ProductVariantService {
         ProductVariant variant = variantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product variant not found with id: " + id));
         
+        if (request.getVariantName() != null) {
+            variant.setVariantName(request.getVariantName());
+        }
         if (request.getColor() != null) {
             variant.setColor(request.getColor());
         }
@@ -90,29 +92,23 @@ public class ProductVariantService {
         if (request.getMaterial() != null) {
             variant.setMaterial(request.getMaterial());
         }
-        if (request.getLensType() != null) {
-            variant.setLensType(request.getLensType());
+        if (request.getAttributesJson() != null) {
+            variant.setAttributesJson(request.getAttributesJson());
         }
-        if (request.getFrameMaterial() != null) {
-            variant.setFrameMaterial(request.getFrameMaterial());
+        if (request.getCurrency() != null) {
+            variant.setCurrency(request.getCurrency());
         }
-        if (request.getFrameShape() != null) {
-            variant.setFrameShape(request.getFrameShape());
+        if (request.getBasePrice() != null) {
+            variant.setBasePrice(request.getBasePrice());
         }
-        if (request.getAdditionalPrice() != null) {
-            variant.setAdditionalPrice(request.getAdditionalPrice());
+        if (request.getSalePrice() != null) {
+            variant.setSalePrice(request.getSalePrice());
         }
         if (request.getStockQuantity() != null) {
             variant.setStockQuantity(request.getStockQuantity());
         }
-        if (request.getImageUrl() != null) {
-            variant.setImageUrl(request.getImageUrl());
-        }
         if (request.getIsActive() != null) {
             variant.setIsActive(request.getIsActive());
-        }
-        if (request.getDisplayOrder() != null) {
-            variant.setDisplayOrder(request.getDisplayOrder());
         }
         
         ProductVariant updated = variantRepository.save(variant);
@@ -170,21 +166,17 @@ public class ProductVariantService {
         return ProductVariantDTO.builder()
                 .id(variant.getId())
                 .productId(variant.getProduct().getId())
-                .sku(variant.getSku())
+                .variantName(variant.getVariantName())
                 .color(variant.getColor())
                 .size(variant.getSize())
                 .material(variant.getMaterial())
-                .lensType(variant.getLensType())
-                .frameMaterial(variant.getFrameMaterial())
-                .frameShape(variant.getFrameShape())
-                .additionalPrice(variant.getAdditionalPrice())
+                .attributesJson(variant.getAttributesJson())
+                .currency(variant.getCurrency())
+                .basePrice(variant.getBasePrice())
+                .salePrice(variant.getSalePrice())
                 .stockQuantity(variant.getStockQuantity())
-                .reservedQuantity(variant.getReservedQuantity())
-                .imageUrl(variant.getImageUrl())
                 .isActive(variant.getIsActive())
-                .displayOrder(variant.getDisplayOrder())
                 .createdAt(variant.getCreatedAt())
-                .updatedAt(variant.getUpdatedAt())
                 .build();
     }
 }

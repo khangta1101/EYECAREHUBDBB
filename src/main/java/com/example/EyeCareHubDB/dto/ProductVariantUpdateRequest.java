@@ -12,15 +12,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ProductVariantUpdateRequest {
+    private String variantName;
     private String color;
     private String size;
     private String material;
-    private String lensType;
-    private String frameMaterial;
-    private String frameShape;
-    private BigDecimal additionalPrice;
+    private String attributesJson;
+    private String currency;
+    private BigDecimal basePrice;
+    private BigDecimal salePrice;
     private Integer stockQuantity;
-    private String imageUrl;
     private Boolean isActive;
-    private Integer displayOrder;
 }
