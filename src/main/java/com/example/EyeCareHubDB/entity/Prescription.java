@@ -11,8 +11,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,7 +18,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "prescriptions")
+@Table(name = "Prescriptions")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,63 +27,51 @@ public class Prescription {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "PrescriptionId")
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "\"OrderItemId\"", nullable = false, unique = true)
+    @JoinColumn(name = "OrderItemId", nullable = false, unique = true)
     private OrderItem orderItem;
 
-    // Right eye (OD)
-    @Column(precision = 5, scale = 2)
-    private BigDecimal odSphere;
+    @Column(name = "PdTotal", precision = 5, scale = 2)
+    private BigDecimal pdTotal;
 
-    @Column(precision = 5, scale = 2)
-    private BigDecimal odCylinder;
-
-    private Integer odAxis;
-
-    @Column(precision = 5, scale = 2)
-    private BigDecimal odAdd;
-
-    // Left eye (OS)
-    @Column(precision = 5, scale = 2)
-    private BigDecimal osSphere;
-
-    @Column(precision = 5, scale = 2)
-    private BigDecimal osCylinder;
-
-    private Integer osAxis;
-
-    @Column(precision = 5, scale = 2)
-    private BigDecimal osAdd;
-
-    // Pupillary Distance
-    @Column(precision = 5, scale = 2)
-    private BigDecimal pdRight;
-
-    @Column(precision = 5, scale = 2)
+    @Column(name = "PdLeft", precision = 5, scale = 2)
     private BigDecimal pdLeft;
 
-    @Column(length = 500)
+    @Column(name = "PdRight", precision = 5, scale = 2)
+    private BigDecimal pdRight;
+
+    // Right eye (OD)
+    @Column(name = "SphereOD", precision = 5, scale = 2)
+    private BigDecimal sphereOD;
+
+    @Column(name = "CylOD", precision = 5, scale = 2)
+    private BigDecimal cylOD;
+
+    @Column(name = "AxisOD")
+    private Integer axisOD;
+
+    @Column(name = "AddOD", precision = 5, scale = 2)
+    private BigDecimal addOD;
+
+    // Left eye (OS)
+    @Column(name = "SphereOS", precision = 5, scale = 2)
+    private BigDecimal sphereOS;
+
+    @Column(name = "CylOS", precision = 5, scale = 2)
+    private BigDecimal cylOS;
+
+    @Column(name = "AxisOS")
+    private Integer axisOS;
+
+    @Column(name = "AddOS", precision = 5, scale = 2)
+    private BigDecimal addOS;
+
+    @Column(name = "PrescriptionFileUrl", length = 500)
     private String prescriptionFileUrl;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "Notes", columnDefinition = "TEXT")
     private String notes;
-
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

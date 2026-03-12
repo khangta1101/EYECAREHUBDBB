@@ -13,5 +13,4 @@ public class PolicyUpdateRequest {
     private String title;
     private String content;
     private Boolean isPublished;
-    private Integer displayOrder;
 }

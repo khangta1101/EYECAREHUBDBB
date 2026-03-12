@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "order_items")
+@Table(name = "OrderItems")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,49 +16,39 @@ public class OrderItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "OrderItemId")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(name = "OrderId", nullable = false)
     private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "variant_id", nullable = false)
+    @JoinColumn(name = "VariantId", nullable = false)
     private ProductVariant variant;
 
-    @Column(nullable = false)
+    @Column(name = "Qty", nullable = false)
     private Integer qty;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal unitPriceSnap;
+    @Column(name = "UnitPrice", nullable = false, precision = 10, scale = 2)
+    private BigDecimal unitPrice;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "LineTotal", nullable = false, precision = 12, scale = 2)
     private BigDecimal lineTotal;
 
-    @Column(nullable = false)
+    @Builder.Default
+    @Column(name = "IsPrescription", nullable = false)
     private Boolean isPrescription = false;
 
+    @Column(name = "PreorderExpectedAt")
     private LocalDateTime preorderExpectedAt;
 
+    @Column(name = "PreorderReceivedAt")
     private LocalDateTime preorderReceivedAt;
+
+    @Column(name = "ItemNote", length = 500)
+    private String itemNote;
 
     @OneToOne(mappedBy = "orderItem", cascade = CascadeType.ALL, orphanRemoval = true)
     private Prescription prescription;
-
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
 }

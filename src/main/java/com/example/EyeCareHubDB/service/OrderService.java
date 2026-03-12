@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,7 +62,7 @@ public class OrderService {
 
         // Calculate subtotal
         BigDecimal subtotal = items.stream()
-            .map(i -> i.getUnitPriceSnap().multiply(BigDecimal.valueOf(i.getQty())))
+            .map(item -> item.getUnitPriceSnap().multiply(new BigDecimal(item.getQty())))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal discountTotal = BigDecimal.ZERO;
@@ -70,7 +72,6 @@ public class OrderService {
             promotion = promotionService.validateCode(promotionCode, subtotal).orElse(null);
             if (promotion != null) {
                 discountTotal = promotionService.calculateDiscount(promotion, subtotal, shippingFee);
-                promotionService.incrementUsage(promotion);
             }
         }
 
@@ -89,19 +90,19 @@ public class OrderService {
             .build();
 
         // Copy cart items -> order items + reserve stock
-        for (CartItem ci : items) {
+        for (CartItem item : items) {
             OrderItem oi = OrderItem.builder()
                 .order(order)
-                .variant(ci.getVariant())
-                .qty(ci.getQty())
-                .unitPriceSnap(ci.getUnitPriceSnap())
-                .lineTotal(ci.getUnitPriceSnap().multiply(BigDecimal.valueOf(ci.getQty())))
+                .variant(item.getVariant())
+                .qty(item.getQty())
+                .unitPrice(item.getUnitPriceSnap())
+                .lineTotal(item.getUnitPriceSnap().multiply(BigDecimal.valueOf(item.getQty())))
                 .isPrescription(orderType == OrderType.PRESCRIPTION)
                 .build();
             order.getItems().add(oi);
 
             if (orderType == OrderType.IN_STOCK) {
-                inventoryService.reserveStock(ci.getVariant().getId(), ci.getQty());
+                inventoryService.reserveStock(item.getVariant().getId(), item.getQty());
             }
         }
 
@@ -136,13 +137,13 @@ public class OrderService {
             .orElseThrow(() -> new RuntimeException("Order not found: " + id));
     }
 
-    public List<Order> getOrdersByCustomer(Long customerId) {
+    public Page<Order> getOrdersByCustomer(Long customerId, Pageable pageable) {
         Customer customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
-        return orderRepository.findByCustomerOrderByCreatedAtDesc(customer);
+        return orderRepository.findByCustomerOrderByCreatedAtDesc(customer, pageable);
     }
 
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+    public Page<Order> getAllOrders(Pageable pageable) {
+        return orderRepository.findAll(pageable);
     }
 }

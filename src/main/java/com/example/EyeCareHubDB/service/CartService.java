@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.EyeCareHubDB.entity.Cart;
 import com.example.EyeCareHubDB.entity.Cart.CartStatus;
 import com.example.EyeCareHubDB.entity.CartItem;
+import com.example.EyeCareHubDB.entity.CartItemId;
 import com.example.EyeCareHubDB.entity.Customer;
 import com.example.EyeCareHubDB.entity.ProductVariant;
 import com.example.EyeCareHubDB.repository.CartItemRepository;
@@ -57,14 +58,24 @@ public class CartService {
                 existing.setQty(existing.getQty() + qty);
                 return cartItemRepository.save(existing);
             })
-            .orElseGet(() -> cartItemRepository.save(CartItem.builder()
-                .cart(cart).variant(variant).qty(qty).unitPriceSnap(price).build()));
+            .orElseGet(() -> {
+                CartItem newItem = CartItem.builder()
+                    .cart(cart)
+                    .variant(variant)
+                    .qty(qty)
+                    .unitPriceSnap(price)
+                    .build();
+                return cartItemRepository.save(newItem);
+            });
     }
 
     @Transactional
-    public CartItem updateItem(Long cartItemId, int qty) {
-        CartItem item = cartItemRepository.findById(cartItemId)
-            .orElseThrow(() -> new RuntimeException("CartItem not found: " + cartItemId));
+    public CartItem updateItem(Long cartId, Long variantId, int qty) {
+        CartItem item = cartItemRepository.findByCartAndVariant(
+            cartRepository.getReferenceById(cartId),
+            variantRepository.getReferenceById(variantId)
+        ).orElseThrow(() -> new RuntimeException("CartItem not found"));
+        
         if (qty <= 0) {
             cartItemRepository.delete(item);
             return null;
@@ -74,8 +85,8 @@ public class CartService {
     }
 
     @Transactional
-    public void removeItem(Long cartItemId) {
-        cartItemRepository.deleteById(cartItemId);
+    public void removeItem(Long cartId, Long variantId) {
+        cartItemRepository.deleteById(new CartItemId(cartId, variantId));
     }
 
     public Cart getCart(Long customerId) {

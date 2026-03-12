@@ -30,11 +30,10 @@ public class AfterSalesService {
     }
 
     @Transactional
-    public AfterSalesCase updateCase(Long id, CaseStatus status, String resolution) {
+    public AfterSalesCase updateCase(Long id, CaseStatus status) {
         AfterSalesCase asc = caseRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Case not found: " + id));
         asc.setStatus(status);
-        if (resolution != null) asc.setResolution(resolution);
         return caseRepository.save(asc);
     }
 

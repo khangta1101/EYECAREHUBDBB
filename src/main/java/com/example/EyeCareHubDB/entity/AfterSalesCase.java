@@ -16,47 +16,46 @@ public class AfterSalesCase {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "CaseId")
+    private Long caseId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(name = "OrderId", nullable = false)
     private Order order;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "CaseType", nullable = false, length = 20)
     private CaseType caseType;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "Status", nullable = false, length = 20)
     private CaseStatus status = CaseStatus.NEW;
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
+    @Column(name = "Reason", columnDefinition = "TEXT")
+    private String reason;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "ItemsJson", columnDefinition = "TEXT")
     private String itemsJson;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "EvidenceUrls", columnDefinition = "TEXT")
     private String evidenceUrls;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "requested_by", nullable = false)
+    @JoinColumn(name = "RequestedBy", nullable = false)
     private Account requestedBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "handled_by")
+    @JoinColumn(name = "HandledBy")
     private Account handledBy;
 
-    @Column(columnDefinition = "TEXT")
-    private String resolution;
-
-    @Column(precision = 12, scale = 2)
+    @Column(name = "RefundAmount", precision = 12, scale = 2)
     private BigDecimal refundAmount;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist

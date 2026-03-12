@@ -33,12 +33,12 @@ public class PrescriptionService {
     }
 
     private void validatePrescriptionValues(Prescription p) {
-        validateRange(p.getOdSphere(), -20.0, 20.0, "OD Sphere");
-        validateRange(p.getOsSphere(), -20.0, 20.0, "OS Sphere");
-        validateRange(p.getOdCylinder(), -6.0, 6.0, "OD Cylinder");
-        validateRange(p.getOsCylinder(), -6.0, 6.0, "OS Cylinder");
-        validateIntRange(p.getOdAxis(), 0, 180, "OD Axis");
-        validateIntRange(p.getOsAxis(), 0, 180, "OS Axis");
+        validateRange(p.getSphereOD(), -20.0, 20.0, "OD Sphere");
+        validateRange(p.getSphereOS(), -20.0, 20.0, "OS Sphere");
+        validateRange(p.getCylOD(), -6.0, 6.0, "OD Cylinder");
+        validateRange(p.getCylOS(), -6.0, 6.0, "OS Cylinder");
+        validateIntRange(p.getAxisOD(), 0, 180, "OD Axis");
+        validateIntRange(p.getAxisOS(), 0, 180, "OS Axis");
     }
 
     private void validateRange(java.math.BigDecimal val, double min, double max, String field) {
@@ -63,16 +63,15 @@ public class PrescriptionService {
         Prescription existing = prescriptionRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Prescription not found: " + id));
         validatePrescriptionValues(updated);
-        existing.setOdSphere(updated.getOdSphere());
-        existing.setOdCylinder(updated.getOdCylinder());
-        existing.setOdAxis(updated.getOdAxis());
-        existing.setOdAdd(updated.getOdAdd());
-        existing.setOsSphere(updated.getOsSphere());
-        existing.setOsCylinder(updated.getOsCylinder());
-        existing.setOsAxis(updated.getOsAxis());
-        existing.setOsAdd(updated.getOsAdd());
-        existing.setPdRight(updated.getPdRight());
-        existing.setPdLeft(updated.getPdLeft());
+        existing.setSphereOD(updated.getSphereOD());
+        existing.setCylOD(updated.getCylOD());
+        existing.setAxisOD(updated.getAxisOD());
+        existing.setAddOD(updated.getAddOD());
+        existing.setSphereOS(updated.getSphereOS());
+        existing.setCylOS(updated.getCylOS());
+        existing.setAxisOS(updated.getAxisOS());
+        existing.setAddOS(updated.getAddOS());
+        existing.setPdTotal(updated.getPdTotal());
         existing.setPrescriptionFileUrl(updated.getPrescriptionFileUrl());
         existing.setNotes(updated.getNotes());
         return prescriptionRepository.save(existing);

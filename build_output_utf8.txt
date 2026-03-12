@@ -1,0 +1,61 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] ----------------------< com.example:EyeCareHubDB >----------------------
+[INFO] Building EyeCareHubDB 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ EyeCareHubDB ---
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ EyeCareHubDB ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 128 source files with javac [debug parameters release 17] to target\classes
+[INFO] -------------------------------------------------------------
+[WARNING] COMPILATION WARNING : 
+[INFO] -------------------------------------------------------------
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/Feedback.java:[60,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/Address.java:[66,20] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/Address.java:[69,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/Address.java:[73,25] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/Address.java:[76,27] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/Address.java:[79,27] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/Account.java:[60,27] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/InventoryLocation.java:[35,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/FulfillmentTask.java:[34,24] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/Customer.java:[58,27] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/Customer.java:[61,27] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/Customer.java:[64,27] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/AfterSalesCase.java:[32,24] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/Payment.java:[38,27] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/Cart.java:[29,24] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[WARNING] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/entity/Shipment.java:[35,28] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[INFO] 16 warnings 
+[INFO] -------------------------------------------------------------
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/service/CartService.java:[88,43] cannot find symbol
+  symbol:   class CartItemId
+  location: class com.example.EyeCareHubDB.service.CartService
+[INFO] 1 error
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  12.194 s
+[INFO] Finished at: 2026-03-12T23:57:59+07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.14.1:compile (default-compile) on project EyeCareHubDB: Compilation failure
+[ERROR] /D:/SWP391_BE/EYECAREHUBDBB/src/main/java/com/example/EyeCareHubDB/service/CartService.java:[88,43] cannot find symbol
+[ERROR]   symbol:   class CartItemId
+[ERROR]   location: class com.example.EyeCareHubDB.service.CartService
+[ERROR] 
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

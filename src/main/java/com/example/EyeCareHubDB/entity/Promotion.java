@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "promotions")
+@Table(name = "Promotions")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,60 +16,51 @@ public class Promotion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "PromotionId")
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(name = "Code", nullable = false, unique = true, length = 50)
     private String code;
 
+    @Column(name = "Name", length = 200)
+    private String name;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "PromoType", nullable = false, length = 20)
     private PromoType promoType;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "DiscountType", nullable = false, length = 20)
     private DiscountType discountType;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(name = "DiscountValue", nullable = false, precision = 10, scale = 2)
     private BigDecimal discountValue;
 
-    @Column(precision = 10, scale = 2)
+    @Column(name = "MinOrderAmount", precision = 10, scale = 2)
     private BigDecimal minOrderAmount;
 
-    @Column(precision = 10, scale = 2)
+    @Column(name = "MaxDiscount", precision = 10, scale = 2)
     private BigDecimal maxDiscount;
 
-    @Column(nullable = false)
+    @Column(name = "StartAt", nullable = false)
     private LocalDateTime startAt;
 
-    @Column(nullable = false)
+    @Column(name = "EndAt", nullable = false)
     private LocalDateTime endAt;
 
-    private Integer usageLimit;
-
-    @Column(nullable = false)
-    private Integer usedCount = 0;
-
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "RuleJson", columnDefinition = "TEXT")
     private String ruleJson;
 
-    @Column(nullable = false)
+    @Builder.Default
+    @Column(name = "IsActive", nullable = false)
     private Boolean isActive = true;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 
     public enum PromoType {

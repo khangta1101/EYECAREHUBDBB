@@ -1,6 +1,6 @@
 package com.example.EyeCareHubDB.controller;
 
-import java.util.List;
+
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import com.example.EyeCareHubDB.dto.PolicyCreateRequest;
 import com.example.EyeCareHubDB.dto.PolicyDTO;
@@ -32,39 +35,34 @@ public class PolicyController {
     private final PolicyService policyService;
     
     @GetMapping
-    public ResponseEntity<List<PolicyDTO>> getAllPolicies() {
-        return ResponseEntity.ok(policyService.getAllPolicies());
+    public ResponseEntity<Page<PolicyDTO>> getAllPolicies(
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        return ResponseEntity.ok(policyService.getAllPolicies(PageRequest.of(page, size)));
     }
     
     @GetMapping("/published")
-    public ResponseEntity<List<PolicyDTO>> getPublishedPolicies() {
-        return ResponseEntity.ok(policyService.getPublishedPolicies());
+    public ResponseEntity<Page<PolicyDTO>> getPublishedPolicies(
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        return ResponseEntity.ok(policyService.getPublishedPolicies(PageRequest.of(page, size)));
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<PolicyDTO> getPolicyById(@PathVariable Long id) {
+    public ResponseEntity<PolicyDTO> getPolicyById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(policyService.getPolicyById(id));
     }
     
     @GetMapping("/type/{type}")
-    public ResponseEntity<PolicyDTO> getPolicyByType(@PathVariable String type) {
+    public ResponseEntity<PolicyDTO> getPolicyByType(@PathVariable("type") String type) {
         return ResponseEntity.ok(policyService.getPolicyByType(Policy.PolicyType.valueOf(type)));
     }
     
     @GetMapping("/public/type/{type}")
-    public ResponseEntity<PolicyPublicResponse> getPublishedPolicyByType(@PathVariable String type) {
+    public ResponseEntity<PolicyPublicResponse> getPublishedPolicyByType(@PathVariable("type") String type) {
         return ResponseEntity.ok(policyService.getPublishedPolicyByType(Policy.PolicyType.valueOf(type)));
     }
     
-    @GetMapping("/slug/{slug}")
-    public ResponseEntity<PolicyDTO> getPolicyBySlug(@PathVariable String slug) {
-        return ResponseEntity.ok(policyService.getPolicyBySlug(slug));
-    }
-    
-    @GetMapping("/public/slug/{slug}")
-    public ResponseEntity<PolicyPublicResponse> getPublishedPolicyBySlug(@PathVariable String slug) {
-        return ResponseEntity.ok(policyService.getPublishedPolicyBySlug(slug));
-    }
     
     @PostMapping
     public ResponseEntity<PolicyDTO> createPolicy(@RequestBody PolicyCreateRequest request) {
@@ -74,13 +72,13 @@ public class PolicyController {
     
     @PutMapping("/{id}")
     public ResponseEntity<PolicyDTO> updatePolicy(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody PolicyUpdateRequest request) {
         return ResponseEntity.ok(policyService.updatePolicy(id, request));
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePolicy(@PathVariable Long id) {
+    public ResponseEntity<Void> deletePolicy(@PathVariable("id") Long id) {
         policyService.deletePolicy(id);
         return ResponseEntity.noContent().build();
     }

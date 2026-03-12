@@ -7,7 +7,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "cart_items")
+@Table(name = "CartItems")
+@IdClass(CartItemId.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,40 +16,26 @@ import lombok.*;
 public class CartItem {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cart_id", nullable = false)
+    @JoinColumn(name = "CartId", nullable = false)
     private Cart cart;
 
+    @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "variant_id", nullable = false)
+    @JoinColumn(name = "VariantId", nullable = false)
     private ProductVariant variant;
 
-    @Column(nullable = false)
+    @Column(name = "Qty", nullable = false)
     private Integer qty;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(name = "UnitPriceSnap", nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPriceSnap;
 
-    @Column(length = 50)
-    private String promotionCode;
-
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
+    @Column(name = "AddedAt", nullable = false, updatable = false)
+    private LocalDateTime addedAt;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        addedAt = LocalDateTime.now();
     }
 }

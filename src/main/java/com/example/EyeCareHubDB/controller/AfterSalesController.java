@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "After Sales")
 @RestController
-@RequestMapping("/api/after-sales")
+@RequestMapping("/api/v1/after-sales")
 @RequiredArgsConstructor
 public class AfterSalesController {
 
@@ -44,8 +44,7 @@ public class AfterSalesController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<AfterSalesCase> updateCase(@PathVariable Long id,
-                                                      @RequestParam CaseStatus status,
-                                                      @RequestParam(required = false) String resolution) {
-        return ResponseEntity.ok(afterSalesService.updateCase(id, status, resolution));
+                                                      @RequestParam CaseStatus status) {
+        return ResponseEntity.ok(afterSalesService.updateCase(id, status));
     }
 }

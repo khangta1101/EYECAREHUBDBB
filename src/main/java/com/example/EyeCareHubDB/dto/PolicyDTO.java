@@ -15,13 +15,13 @@ public class PolicyDTO {
     private Long id;
     private String type;
     private String title;
-    private String slug;
     private String content;
-    private Boolean isPublished;
-    private Integer displayOrder;
+    private Integer version;
+    private LocalDateTime effectiveFrom;
+    private LocalDateTime effectiveTo;
+    private Boolean isActive;
+    private String createdBy;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private LocalDateTime publishedAt;
 }
 
 

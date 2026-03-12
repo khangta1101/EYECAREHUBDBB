@@ -9,7 +9,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "Orders")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,73 +18,69 @@ public class Order {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "OrderId")
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(name = "OrderNo", nullable = false, unique = true, length = 50)
     private String orderNo;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customer_id", nullable = false)
+    @JoinColumn(name = "CustomerId", nullable = false)
     private Customer customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "shipping_address_id")
+    @JoinColumn(name = "ShippingAddressId")
     private Address shippingAddress;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sales_account_id")
-    private Account salesAccount;
+    @JoinColumn(name = "SalesStaffId")
+    private Account salesStaff;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "Channel", nullable = false, length = 20)
+    @Builder.Default
     private Channel channel = Channel.ONLINE;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "OrderType", nullable = false, length = 20)
     private OrderType orderType;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "Status", nullable = false, length = 20)
+    @Builder.Default
     private OrderStatus status = OrderStatus.NEW;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "promotion_id")
+    @JoinColumn(name = "PromotionId")
     private Promotion promotion;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "Subtotal", nullable = false, precision = 12, scale = 2)
     private BigDecimal subtotal;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "DiscountTotal", nullable = false, precision = 12, scale = 2)
+    @Builder.Default
     private BigDecimal discountTotal = BigDecimal.ZERO;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(name = "ShippingFee", nullable = false, precision = 10, scale = 2)
+    @Builder.Default
     private BigDecimal shippingFee = BigDecimal.ZERO;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "GrandTotal", nullable = false, precision = 12, scale = 2)
     private BigDecimal grandTotal;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "Note", columnDefinition = "TEXT")
     private String note;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 
     public enum Channel {

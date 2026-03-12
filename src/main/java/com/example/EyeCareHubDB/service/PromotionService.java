@@ -3,6 +3,8 @@ package com.example.EyeCareHubDB.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,9 +29,6 @@ public class PromotionService {
         if (now.isBefore(promo.getStartAt()) || now.isAfter(promo.getEndAt())) {
             throw new RuntimeException("Promotion code is not valid at this time");
         }
-        if (promo.getUsageLimit() != null && promo.getUsedCount() >= promo.getUsageLimit()) {
-            throw new RuntimeException("Promotion code has reached usage limit");
-        }
         if (promo.getMinOrderAmount() != null && orderSubtotal.compareTo(promo.getMinOrderAmount()) < 0) {
             throw new RuntimeException("Order subtotal does not meet minimum: " + promo.getMinOrderAmount());
         }
@@ -51,19 +50,13 @@ public class PromotionService {
         return discount.min(subtotal);
     }
 
-    @Transactional
-    public void incrementUsage(Promotion promo) {
-        promo.setUsedCount(promo.getUsedCount() + 1);
-        promotionRepository.save(promo);
-    }
-
     public Promotion createPromotion(Promotion promotion) {
         return promotionRepository.save(promotion);
     }
 
-    public java.util.List<Promotion> getAllActivePromotions() {
+    public Page<Promotion> getAllActivePromotions(Pageable pageable) {
         LocalDateTime now = LocalDateTime.now();
-        return promotionRepository.findByIsActiveTrueAndStartAtBeforeAndEndAtAfter(now, now);
+        return promotionRepository.findByIsActiveTrueAndStartAtBeforeAndEndAtAfter(now, now, pageable);
     }
 
     @Transactional
@@ -76,7 +69,6 @@ public class PromotionService {
         promo.setMaxDiscount(updated.getMaxDiscount());
         promo.setStartAt(updated.getStartAt());
         promo.setEndAt(updated.getEndAt());
-        promo.setUsageLimit(updated.getUsageLimit());
         promo.setIsActive(updated.getIsActive());
         return promotionRepository.save(promo);
     }

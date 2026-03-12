@@ -10,7 +10,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,7 +17,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "policies")
+@Table(name = "Policies")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -27,48 +26,45 @@ public class Policy {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "PolicyId")
     private Long id;
     
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(name = "PolicyType", nullable = false, unique = true, length = 50)
     private PolicyType type;
     
-    @Column(nullable = false, length = 200)
+    @Column(name = "Title", nullable = false, length = 200)
     private String title;
     
-    @Column(nullable = false, unique = true, length = 200)
-    private String slug;
-    
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(name = "Content", columnDefinition = "TEXT", nullable = false)
     private String content;
+
+    @Column(name = "Version", nullable = false)
+    @Builder.Default
+    private Integer version = 1;
+
+    @Column(name = "EffectiveFrom")
+    private LocalDateTime effectiveFrom;
+
+    @Column(name = "EffectiveTo")
+    private LocalDateTime effectiveTo;
     
-    @Column(nullable = false)
-    private Boolean isPublished = false;
+    @Builder.Default
+    @Column(name = "IsActive", nullable = false)
+    private Boolean isActive = true;
     
-    @Column(nullable = false)
-    private Integer displayOrder = 0;
-    
-    @Column(nullable = false, updatable = false)
+    @Column(name = "CreatedBy", length = 100)
+    private String createdBy;
+
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
-    
-    @Column(nullable = false)
-    private LocalDateTime updatedAt = LocalDateTime.now();
-    
-    private LocalDateTime publishedAt;
     
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
-        if (updatedAt == null) {
-            updatedAt = LocalDateTime.now();
-        }
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
     
     public enum PolicyType {

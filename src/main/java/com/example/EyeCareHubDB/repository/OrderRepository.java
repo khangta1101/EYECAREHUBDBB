@@ -1,5 +1,7 @@
 package com.example.EyeCareHubDB.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,7 +14,7 @@ import com.example.EyeCareHubDB.entity.Order.OrderStatus;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    List<Order> findByCustomerOrderByCreatedAtDesc(Customer customer);
+    Page<Order> findByCustomerOrderByCreatedAtDesc(Customer customer, Pageable pageable);
     List<Order> findByStatus(OrderStatus status);
     Optional<Order> findByOrderNo(String orderNo);
     List<Order> findByCustomerAndStatus(Customer customer, OrderStatus status);
