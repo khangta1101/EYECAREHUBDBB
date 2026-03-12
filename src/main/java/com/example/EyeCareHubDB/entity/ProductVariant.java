@@ -20,7 +20,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "product_variants")
+@Table(name = "\"ProductVariants\"")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -67,7 +67,7 @@ public class ProductVariant {
     @Transient // Not in DB
     private BigDecimal additionalPrice;
     
-    @Column(name = "\"StockQuantity\"", nullable = false)
+    @Transient // Not in ProductVariants table
     @Builder.Default
     private Integer stockQuantity = 0;
     

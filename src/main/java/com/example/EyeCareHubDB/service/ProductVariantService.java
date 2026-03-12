@@ -1,6 +1,8 @@
 package com.example.EyeCareHubDB.service;
 
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -50,16 +52,14 @@ public class ProductVariantService {
     }
     
     public ProductVariantDTO createVariant(Long productId, ProductVariantCreateRequest request) {
-        if (variantRepository.existsBySku(request.getSku())) {
-            throw new RuntimeException("Variant with sku already exists: " + request.getSku());
-        }
-        
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
+
+        String sku = resolveSku(productId, request.getSku());
         
         ProductVariant variant = ProductVariant.builder()
                 .product(product)
-                .sku(request.getSku())
+            .sku(sku)
                 .variantName(request.getVariantName())
                 .color(request.getColor())
                 .size(request.getSize())
@@ -74,6 +74,35 @@ public class ProductVariantService {
         
         ProductVariant saved = variantRepository.save(variant);
         return toDTO(saved);
+    }
+
+    private String resolveSku(Long productId, String requestSku) {
+        if (requestSku != null && !requestSku.isBlank()) {
+            String normalized = requestSku.trim().toUpperCase();
+            if (variantRepository.existsBySku(normalized)) {
+                throw new RuntimeException("Variant with sku already exists: " + normalized);
+            }
+            return normalized;
+        }
+        return generateUniqueSku(productId);
+    }
+
+    private String generateUniqueSku(Long productId) {
+        String prefix = "PV-" + productId + "-";
+
+        for (int i = 0; i < 10; i++) {
+            int suffix = ThreadLocalRandom.current().nextInt(100, 1000);
+            String candidate = prefix + Long.toString(System.currentTimeMillis(), 36).toUpperCase() + suffix;
+            if (!variantRepository.existsBySku(candidate)) {
+                return candidate;
+            }
+        }
+
+        String fallback = prefix + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+        if (variantRepository.existsBySku(fallback)) {
+            throw new RuntimeException("Cannot generate unique SKU, please retry");
+        }
+        return fallback;
     }
     
     public ProductVariantDTO updateVariant(Long id, ProductVariantUpdateRequest request) {
@@ -166,6 +195,7 @@ public class ProductVariantService {
         return ProductVariantDTO.builder()
                 .id(variant.getId())
                 .productId(variant.getProduct().getId())
+                .sku(variant.getSku())
                 .variantName(variant.getVariantName())
                 .color(variant.getColor())
                 .size(variant.getSize())

@@ -9,8 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.EyeCareHubDB.dto.ProductMediaDTO;
 import com.example.EyeCareHubDB.entity.Product;
 import com.example.EyeCareHubDB.entity.ProductMedia;
+import com.example.EyeCareHubDB.entity.ProductVariant;
 import com.example.EyeCareHubDB.repository.ProductMediaRepository;
 import com.example.EyeCareHubDB.repository.ProductRepository;
+import com.example.EyeCareHubDB.repository.ProductVariantRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +23,7 @@ public class ProductMediaService {
     
     private final ProductMediaRepository mediaRepository;
     private final ProductRepository productRepository;
+    private final ProductVariantRepository variantRepository;
     
     public List<ProductMediaDTO> getMediaByProductId(Long productId) {
         return mediaRepository.findMediaByProductId(productId).stream()
@@ -50,9 +53,19 @@ public class ProductMediaService {
             Integer displayOrder) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
+
+        ProductVariant variant = null;
+        if (variantId != null) {
+            variant = variantRepository.findById(variantId)
+                .orElseThrow(() -> new RuntimeException("Product variant not found with id: " + variantId));
+            if (!variant.getProduct().getId().equals(productId)) {
+            throw new RuntimeException("Variant does not belong to product: " + productId);
+            }
+        }
         
         ProductMedia.ProductMediaBuilder builder = ProductMedia.builder()
                 .product(product)
+            .variant(variant)
                 .url(fileUrl)
                 .displayOrder(displayOrder != null ? displayOrder : 0);
         

@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 public class ProductVariantDTO {
     private Long id;
     private Long productId;
+    private String sku;
     private String variantName;
     private String color;
     private String size;
