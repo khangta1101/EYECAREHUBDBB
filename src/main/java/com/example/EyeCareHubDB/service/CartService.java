@@ -26,6 +26,7 @@ public class CartService {
     private final CartItemRepository cartItemRepository;
     private final CustomerRepository customerRepository;
     private final ProductVariantRepository variantRepository;
+    private final VariantInventoryService variantInventoryService;
 
     @Transactional
     public Cart getOrCreateActiveCart(Long customerId) {
@@ -41,7 +42,7 @@ public class CartService {
         ProductVariant variant = variantRepository.findById(variantId)
             .orElseThrow(() -> new RuntimeException("Variant not found: " + variantId));
 
-        if (variant.getStockQuantity() - variant.getReservedQuantity() < qty) {
+        if (!variantInventoryService.hasAvailableStock(variantId, qty)) {
             throw new RuntimeException("Not enough stock for variant: " + variantId);
         }
 

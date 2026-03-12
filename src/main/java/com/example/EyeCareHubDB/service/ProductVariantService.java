@@ -16,6 +16,7 @@ import com.example.EyeCareHubDB.entity.Product;
 import com.example.EyeCareHubDB.entity.ProductVariant;
 import com.example.EyeCareHubDB.repository.ProductRepository;
 import com.example.EyeCareHubDB.repository.ProductVariantRepository;
+import com.example.EyeCareHubDB.service.VariantInventoryService.VariantStockSnapshot;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,6 +27,7 @@ public class ProductVariantService {
     
     private final ProductVariantRepository variantRepository;
     private final ProductRepository productRepository;
+    private final VariantInventoryService variantInventoryService;
     
     public List<ProductVariantDTO> getVariantsByProductId(Long productId) {
         return variantRepository.findByProductId(productId).stream()
@@ -68,11 +70,13 @@ public class ProductVariantService {
                 .currency(request.getCurrency() != null ? request.getCurrency() : "VND")
                 .basePrice(request.getBasePrice())
                 .salePrice(request.getSalePrice())
-                .stockQuantity(request.getStockQuantity() != null ? request.getStockQuantity() : 0)
                 .isActive(true)
                 .build();
         
         ProductVariant saved = variantRepository.save(variant);
+        if (request.getStockQuantity() != null) {
+            variantInventoryService.setTotalStock(saved, request.getStockQuantity());
+        }
         return toDTO(saved);
     }
 
@@ -133,14 +137,14 @@ public class ProductVariantService {
         if (request.getSalePrice() != null) {
             variant.setSalePrice(request.getSalePrice());
         }
-        if (request.getStockQuantity() != null) {
-            variant.setStockQuantity(request.getStockQuantity());
-        }
         if (request.getIsActive() != null) {
             variant.setIsActive(request.getIsActive());
         }
         
         ProductVariant updated = variantRepository.save(variant);
+        if (request.getStockQuantity() != null) {
+            variantInventoryService.setTotalStock(updated, request.getStockQuantity());
+        }
         return toDTO(updated);
     }
     
@@ -154,44 +158,38 @@ public class ProductVariantService {
     public VariantStockResponse getStockStatus(Long id) {
         ProductVariant variant = variantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product variant not found with id: " + id));
+        VariantStockSnapshot stockSnapshot = variantInventoryService.getStockSnapshot(variant);
         
         return VariantStockResponse.builder()
                 .variantId(variant.getId())
                 .sku(variant.getSku())
-                .stockQuantity(variant.getStockQuantity())
-                .reservedQuantity(variant.getReservedQuantity())
-                .availableQuantity(variant.getStockQuantity() - variant.getReservedQuantity())
+            .stockQuantity(stockSnapshot.stockQuantity())
+            .reservedQuantity(stockSnapshot.reservedQuantity())
+            .availableQuantity(stockSnapshot.availableQuantity())
                 .build();
     }
     
     public boolean hasStock(Long id, Integer quantity) {
-        ProductVariant variant = variantRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product variant not found with id: " + id));
-        
-        return variant.getStockQuantity() - variant.getReservedQuantity() >= quantity;
+        return variantInventoryService.hasAvailableStock(id, quantity);
     }
     
     public void decrementStock(Long id, Integer quantity) {
         ProductVariant variant = variantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product variant not found with id: " + id));
-        
-        if (!hasStock(id, quantity)) {
-            throw new RuntimeException("Insufficient stock for variant: " + variant.getSku());
-        }
-        
-        variant.setStockQuantity(variant.getStockQuantity() - quantity);
-        variantRepository.save(variant);
+
+        variantInventoryService.decrementAvailableStock(variant, quantity);
     }
     
     public void incrementStock(Long id, Integer quantity) {
         ProductVariant variant = variantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product variant not found with id: " + id));
-        
-        variant.setStockQuantity(variant.getStockQuantity() + quantity);
-        variantRepository.save(variant);
+
+        variantInventoryService.incrementStock(variant, quantity);
     }
     
     private ProductVariantDTO toDTO(ProductVariant variant) {
+        VariantStockSnapshot stockSnapshot = variantInventoryService.getStockSnapshot(variant);
+
         return ProductVariantDTO.builder()
                 .id(variant.getId())
                 .productId(variant.getProduct().getId())
@@ -204,7 +202,7 @@ public class ProductVariantService {
                 .currency(variant.getCurrency())
                 .basePrice(variant.getBasePrice())
                 .salePrice(variant.getSalePrice())
-                .stockQuantity(variant.getStockQuantity())
+                .stockQuantity(stockSnapshot.stockQuantity())
                 .isActive(variant.getIsActive())
                 .createdAt(variant.getCreatedAt())
                 .build();
