@@ -17,7 +17,7 @@ public class AfterSalesCase {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "CaseId")
-    private Long caseId;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "OrderId", nullable = false)
@@ -25,7 +25,7 @@ public class AfterSalesCase {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "CaseType", nullable = false, length = 20)
-    private CaseType caseType;
+    private CaseType type;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)

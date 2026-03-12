@@ -15,6 +15,7 @@ public class PolicyDTO {
     private Long id;
     private String type;
     private String title;
+    private String slug;
     private String content;
     private Integer version;
     private LocalDateTime effectiveFrom;

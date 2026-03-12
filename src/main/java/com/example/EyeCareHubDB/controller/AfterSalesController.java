@@ -38,8 +38,13 @@ public class AfterSalesController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AfterSalesCase>> getByStatus(@RequestParam(required = false) CaseStatus status) {
-        return ResponseEntity.ok(afterSalesService.getCasesByStatus(status));
+    public ResponseEntity<org.springframework.data.domain.Page<AfterSalesCase>> getAll(
+            @RequestParam(required = false) CaseStatus status,
+            @org.springframework.data.web.PageableDefault(size = 100) org.springframework.data.domain.Pageable pageable) {
+        if (status != null) {
+            return ResponseEntity.ok(afterSalesService.getCasesByStatus(status, pageable));
+        }
+        return ResponseEntity.ok(afterSalesService.getAllCases(pageable));
     }
 
     @PatchMapping("/{id}")

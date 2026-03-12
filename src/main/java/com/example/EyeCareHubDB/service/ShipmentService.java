@@ -44,7 +44,7 @@ public class ShipmentService {
             .orElseThrow(() -> new RuntimeException("No shipment for order: " + orderId));
     }
 
-    public List<Shipment> getAllShipments() {
-        return shipmentRepository.findAll();
+    public org.springframework.data.domain.Page<Shipment> getAllShipments(org.springframework.data.domain.Pageable pageable) {
+        return shipmentRepository.findAll(pageable);
     }
 }

@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +20,16 @@ import org.springframework.data.domain.Pageable;
 public class PolicyService {
     
     private final PolicyRepository policyRepository;
+
+    private String toSlug(String input) {
+        if (input == null) return "";
+        String slug = java.text.Normalizer.normalize(input.toLowerCase(), java.text.Normalizer.Form.NFD);
+        slug = slug.replaceAll("[^\\p{ASCII}]", "")
+                   .replaceAll("[^a-z0-9\\s]", "")
+                   .replaceAll("\\s+", "-")
+                   .replaceAll("^-+|-+$", "");
+        return slug;
+    }
     
     public Page<PolicyDTO> getAllPolicies(Pageable pageable) {
         return policyRepository.findAll(pageable)
@@ -49,11 +60,16 @@ public class PolicyService {
     }
     
     public PolicyDTO createPolicy(PolicyCreateRequest request) {
+        String slug = (request.getSlug() == null || request.getSlug().isEmpty()) 
+                      ? toSlug(request.getTitle()) : request.getSlug();
+        
         Policy policy = Policy.builder()
                 .type(Policy.PolicyType.valueOf(request.getType()))
                 .title(request.getTitle())
+                .slug(slug)
                 .content(request.getContent())
-                .isActive(false)
+                .effectiveFrom(LocalDateTime.now()) // Ensure not null
+                .isActive("PUBLISHED".equalsIgnoreCase(request.getStatus()))
                 .build();
         
         Policy saved = policyRepository.save(policy);
@@ -66,9 +82,18 @@ public class PolicyService {
         
         if (request.getTitle() != null) {
             policy.setTitle(request.getTitle());
+            if (request.getSlug() == null || request.getSlug().isEmpty()) {
+                policy.setSlug(toSlug(request.getTitle()));
+            }
+        }
+        if (request.getSlug() != null && !request.getSlug().isEmpty()) {
+            policy.setSlug(request.getSlug());
         }
         if (request.getContent() != null) {
             policy.setContent(request.getContent());
+        }
+        if (request.getStatus() != null) {
+            policy.setIsActive("PUBLISHED".equalsIgnoreCase(request.getStatus()));
         }
         if (request.getIsPublished() != null) {
             policy.setIsActive(request.getIsPublished());
@@ -106,6 +131,7 @@ public class PolicyService {
                 .id(policy.getId())
                 .type(policy.getType().name())
                 .title(policy.getTitle())
+                .slug(policy.getSlug())
                 .content(policy.getContent())
                 .version(policy.getVersion())
                 .effectiveFrom(policy.getEffectiveFrom())

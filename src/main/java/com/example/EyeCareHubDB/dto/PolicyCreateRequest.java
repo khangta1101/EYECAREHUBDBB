@@ -12,5 +12,7 @@ import lombok.NoArgsConstructor;
 public class PolicyCreateRequest {
     private String type;
     private String title;
+    private String slug;
     private String content;
+    private String status;
 }

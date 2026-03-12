@@ -46,7 +46,11 @@ public class AfterSalesService {
         return caseRepository.findByOrderId(orderId);
     }
 
-    public List<AfterSalesCase> getCasesByStatus(CaseStatus status) {
-        return caseRepository.findByStatus(status);
+    public org.springframework.data.domain.Page<AfterSalesCase> getAllCases(org.springframework.data.domain.Pageable pageable) {
+        return caseRepository.findAll(pageable);
+    }
+
+    public org.springframework.data.domain.Page<AfterSalesCase> getCasesByStatus(CaseStatus status, org.springframework.data.domain.Pageable pageable) {
+        return caseRepository.findByStatus(status, pageable);
     }
 }

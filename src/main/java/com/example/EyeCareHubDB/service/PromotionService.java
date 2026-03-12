@@ -21,6 +21,14 @@ public class PromotionService {
 
     private final PromotionRepository promotionRepository;
 
+    private String generateUniqueCode() {
+        String code;
+        do {
+            code = "PRM-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        } while (promotionRepository.findByCode(code).isPresent());
+        return code;
+    }
+
     public Optional<Promotion> validateCode(String code, BigDecimal orderSubtotal) {
         Promotion promo = promotionRepository.findByCodeAndIsActiveTrue(code)
             .orElseThrow(() -> new RuntimeException("Promotion code not found or inactive: " + code));
@@ -51,6 +59,9 @@ public class PromotionService {
     }
 
     public Promotion createPromotion(Promotion promotion) {
+        if (promotion.getCode() == null || promotion.getCode().isEmpty()) {
+            promotion.setCode(generateUniqueCode());
+        }
         return promotionRepository.save(promotion);
     }
 

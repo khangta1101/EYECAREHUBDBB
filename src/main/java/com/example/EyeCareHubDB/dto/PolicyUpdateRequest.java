@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 @Builder
 public class PolicyUpdateRequest {
     private String title;
+    private String slug;
     private String content;
+    private String status;
     private Boolean isPublished;
 }

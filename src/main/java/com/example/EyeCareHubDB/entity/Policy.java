@@ -30,8 +30,11 @@ public class Policy {
     private Long id;
     
     @Enumerated(EnumType.STRING)
-    @Column(name = "PolicyType", nullable = false, unique = true, length = 50)
+    @Column(name = "PolicyType", nullable = false, length = 50)
     private PolicyType type;
+
+    @Column(name = "Slug", length = 200)
+    private String slug;
     
     @Column(name = "Title", nullable = false, length = 200)
     private String title;
@@ -43,8 +46,9 @@ public class Policy {
     @Builder.Default
     private Integer version = 1;
 
-    @Column(name = "EffectiveFrom")
-    private LocalDateTime effectiveFrom;
+    @Column(name = "EffectiveFrom", nullable = false)
+    @Builder.Default
+    private LocalDateTime effectiveFrom = LocalDateTime.now();
 
     @Column(name = "EffectiveTo")
     private LocalDateTime effectiveTo;
@@ -68,15 +72,12 @@ public class Policy {
     }
     
     public enum PolicyType {
-        PRIVACY_POLICY,
-        TERMS_OF_SERVICE,
-        RETURN_POLICY,
-        SHIPPING_POLICY,
-        WARRANTY_POLICY,
-        PAYMENT_POLICY,
-        COOKIE_POLICY,
-        FAQ,
-        ABOUT_US,
-        CONTACT_INFO
+        RETURN,
+        WARRANTY,
+        SHIPPING,
+        PAYMENT,
+        PRIVACY,
+        TERMS,
+        OTHER
     }
 }

@@ -41,7 +41,8 @@ public class ShipmentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Shipment>> getAll() {
-        return ResponseEntity.ok(shipmentService.getAllShipments());
+    public ResponseEntity<org.springframework.data.domain.Page<Shipment>> getAll(
+            @org.springframework.data.web.PageableDefault(size = 100) org.springframework.data.domain.Pageable pageable) {
+        return ResponseEntity.ok(shipmentService.getAllShipments(pageable));
     }
 }
