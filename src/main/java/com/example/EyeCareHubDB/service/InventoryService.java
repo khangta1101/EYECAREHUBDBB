@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.EyeCareHubDB.entity.InventoryLocation;
 import com.example.EyeCareHubDB.entity.InventoryStock;
+import com.example.EyeCareHubDB.entity.InventoryStockId;
 import com.example.EyeCareHubDB.entity.ProductVariant;
 import com.example.EyeCareHubDB.repository.InventoryLocationRepository;
 import com.example.EyeCareHubDB.repository.InventoryStockRepository;

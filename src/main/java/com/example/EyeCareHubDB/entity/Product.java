@@ -55,6 +55,9 @@ public class Product {
     
     @Column(name = "\"Brand\"", length = 100)
     private String brand;
+
+    @Column(name = "\"SKU\"", unique = true, length = 100)
+    private String sku;
     
     @Column(name = "\"Description\"", length = 2000)
     private String description;

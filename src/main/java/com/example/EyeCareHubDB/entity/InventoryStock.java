@@ -6,36 +6,36 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "inventory_stocks",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"location_id", "variant_id"}))
+@Table(name = "\"InventoryStocks\"")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@IdClass(InventoryStockId.class)
 public class InventoryStock {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "location_id", nullable = false)
+    @JoinColumn(name = "\"LocationId\"", nullable = false)
     private InventoryLocation location;
 
+    @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "variant_id", nullable = false)
+    @JoinColumn(name = "\"VariantId\"", nullable = false)
     private ProductVariant variant;
 
-    @Column(nullable = false)
+    @Builder.Default
+    @Column(name = "\"OnHandQty\"", nullable = false)
     private Integer onHandQty = 0;
 
-    @Column(nullable = false)
+    @Builder.Default
+    @Column(name = "\"ReservedQty\"", nullable = false)
     private Integer reservedQty = 0;
 
-    @Column(nullable = false, updatable = false)
+    @Transient // Not in screenshot for Stocks, but exists for Locations. Let's make it transient to be safe or check.
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "\"UpdatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist

@@ -32,40 +32,40 @@ public class ProductVariantController {
     private final ProductVariantService variantService;
     
     @GetMapping("/product/{productId}")
-    public ResponseEntity<List<ProductVariantDTO>> getVariantsByProductId(@PathVariable Long productId) {
+    public ResponseEntity<List<ProductVariantDTO>> getVariantsByProductId(@PathVariable("productId") Long productId) {
         return ResponseEntity.ok(variantService.getVariantsByProductId(productId));
     }
     
     @GetMapping("/product/{productId}/active")
-    public ResponseEntity<List<ProductVariantDTO>> getActiveVariantsByProductId(@PathVariable Long productId) {
+    public ResponseEntity<List<ProductVariantDTO>> getActiveVariantsByProductId(@PathVariable("productId") Long productId) {
         return ResponseEntity.ok(variantService.getActiveVariantsByProductId(productId));
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<ProductVariantDTO> getVariantById(@PathVariable Long id) {
+    public ResponseEntity<ProductVariantDTO> getVariantById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(variantService.getVariantById(id));
     }
     
     @GetMapping("/sku/{sku}")
-    public ResponseEntity<ProductVariantDTO> getVariantBySku(@PathVariable String sku) {
+    public ResponseEntity<ProductVariantDTO> getVariantBySku(@PathVariable("sku") String sku) {
         return ResponseEntity.ok(variantService.getVariantBySku(sku));
     }
     
     @GetMapping("/{id}/stock")
-    public ResponseEntity<VariantStockResponse> getStockStatus(@PathVariable Long id) {
+    public ResponseEntity<VariantStockResponse> getStockStatus(@PathVariable("id") Long id) {
         return ResponseEntity.ok(variantService.getStockStatus(id));
     }
     
     @GetMapping("/{id}/has-stock")
     public ResponseEntity<Boolean> hasStock(
-            @PathVariable Long id,
-            @RequestParam Integer quantity) {
+            @PathVariable("id") Long id,
+            @RequestParam("quantity") Integer quantity) {
         return ResponseEntity.ok(variantService.hasStock(id, quantity));
     }
     
     @PostMapping("/product/{productId}")
     public ResponseEntity<ProductVariantDTO> createVariant(
-            @PathVariable Long productId,
+            @PathVariable("productId") Long productId,
             @RequestBody ProductVariantCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(variantService.createVariant(productId, request));
@@ -73,29 +73,29 @@ public class ProductVariantController {
     
     @PutMapping("/{id}")
     public ResponseEntity<ProductVariantDTO> updateVariant(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody ProductVariantUpdateRequest request) {
         return ResponseEntity.ok(variantService.updateVariant(id, request));
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteVariant(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteVariant(@PathVariable("id") Long id) {
         variantService.deleteVariant(id);
         return ResponseEntity.noContent().build();
     }
     
     @PutMapping("/{id}/decrement-stock")
     public ResponseEntity<Void> decrementStock(
-            @PathVariable Long id,
-            @RequestParam Integer quantity) {
+            @PathVariable("id") Long id,
+            @RequestParam("quantity") Integer quantity) {
         variantService.decrementStock(id, quantity);
         return ResponseEntity.ok().build();
     }
     
     @PutMapping("/{id}/increment-stock")
     public ResponseEntity<Void> incrementStock(
-            @PathVariable Long id,
-            @RequestParam Integer quantity) {
+            @PathVariable("id") Long id,
+            @RequestParam("quantity") Integer quantity) {
         variantService.incrementStock(id, quantity);
         return ResponseEntity.ok().build();
     }

@@ -57,7 +57,7 @@ public class ProductVariantService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
 
-        String sku = resolveSku(productId, request.getSku());
+        String sku = resolveSku(product, request);
         
         ProductVariant variant = ProductVariant.builder()
                 .product(product)
@@ -80,33 +80,45 @@ public class ProductVariantService {
         return toDTO(saved);
     }
 
-    private String resolveSku(Long productId, String requestSku) {
-        if (requestSku != null && !requestSku.isBlank()) {
-            String normalized = requestSku.trim().toUpperCase();
+    private String resolveSku(Product product, ProductVariantCreateRequest request) {
+        if (request.getSku() != null && !request.getSku().isBlank()) {
+            String normalized = request.getSku().trim().toUpperCase();
             if (variantRepository.existsBySku(normalized)) {
                 throw new RuntimeException("Variant with sku already exists: " + normalized);
             }
             return normalized;
         }
-        return generateUniqueSku(productId);
+        return generateUniqueSku(product, request);
     }
 
-    private String generateUniqueSku(Long productId) {
-        String prefix = "PV-" + productId + "-";
+    private String generateUniqueSku(Product product, ProductVariantCreateRequest request) {
+        String baseSku = product.getSku() != null ? product.getSku() : "P" + product.getId();
+        StringBuilder sb = new StringBuilder(baseSku);
+        
+        if (request.getColor() != null && !request.getColor().isBlank()) {
+            sb.append("-").append(request.getColor().substring(0, Math.min(3, request.getColor().length())).toUpperCase());
+        }
+        if (request.getSize() != null && !request.getSize().isBlank()) {
+            sb.append("-").append(request.getSize().toUpperCase());
+        }
+        
+        String prefix = sb.toString();
+        String candidate = prefix;
+        
+        if (!variantRepository.existsBySku(candidate)) {
+            return candidate;
+        }
 
+        // Add random suffix if collision
         for (int i = 0; i < 10; i++) {
-            int suffix = ThreadLocalRandom.current().nextInt(100, 1000);
-            String candidate = prefix + Long.toString(System.currentTimeMillis(), 36).toUpperCase() + suffix;
+            int suffix = ThreadLocalRandom.current().nextInt(10, 100);
+            candidate = prefix + "-" + suffix;
             if (!variantRepository.existsBySku(candidate)) {
                 return candidate;
             }
         }
 
-        String fallback = prefix + UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
-        if (variantRepository.existsBySku(fallback)) {
-            throw new RuntimeException("Cannot generate unique SKU, please retry");
-        }
-        return fallback;
+        return prefix + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
     }
     
     public ProductVariantDTO updateVariant(Long id, ProductVariantUpdateRequest request) {

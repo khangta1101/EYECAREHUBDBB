@@ -1,7 +1,6 @@
 package com.example.EyeCareHubDB.service;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -215,9 +214,7 @@ public class VariantInventoryService {
     }
 
     private List<InventoryStock> getOrderedStocks(Long variantId) {
-        List<InventoryStock> stocks = new ArrayList<>(stockRepository.findByVariantId(variantId));
-        stocks.sort(Comparator.comparing(InventoryStock::getId, Comparator.nullsLast(Long::compareTo)));
-        return stocks;
+        return new ArrayList<>(stockRepository.findByVariantId(variantId));
     }
 
     private InventoryStock getOrCreateDefaultStock(ProductVariant variant) {

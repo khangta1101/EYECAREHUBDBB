@@ -115,10 +115,12 @@ public class ProductService {
             .orElseThrow(() -> new RuntimeException("Category not found with id: " + request.getPrimaryCategoryId()));
         
         String productType = normalizeProductType(request.getProductType());
+        String sku = generateProductSku(request.getName(), request.getSku());
         
         Product product = Product.builder()
                 .name(request.getName())
-            .searchTags(request.getSearchTags())
+                .sku(sku)
+                .searchTags(request.getSearchTags())
                 .productType(productType)
                 .category(category)
                 .brand(request.getBrand())
@@ -185,11 +187,22 @@ public class ProductService {
         }
         return productType;
     }
+
+    private String generateProductSku(String name, String providedSku) {
+        if (providedSku != null && !providedSku.isBlank()) {
+            return providedSku.trim().toUpperCase();
+        }
+        // Simple generator: Prefix + Name (no accents/spaces) + Random
+        String cleanName = name.replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
+        if (cleanName.length() > 5) cleanName = cleanName.substring(0, 5);
+        return "P-" + cleanName + "-" + (int)(Math.random() * 9000 + 1000);
+    }
     
     private ProductDTO toDTO(Product product) {
         return ProductDTO.builder()
                 .productId(product.getId())
                 .name(product.getName())
+                .sku(product.getSku())
                 .searchTags(product.getSearchTags())
                 .productType(product.getProductType())
                 .primaryCategoryId(product.getCategory().getId())
@@ -197,6 +210,7 @@ public class ProductService {
                 .description(product.getDescription())
                 .isActive(product.getIsActive())
                 .createdAt(product.getCreatedAt())
+                .media(productMediaService.getAllMediaByProductId(product.getId()))
                 .build();
     }
 
@@ -215,7 +229,7 @@ public class ProductService {
                 .id(product.getId())
                 .name(product.getName())
                 .slug(product.getSearchTags())
-                .sku(null) // product-level SKU not modeled; variants carry SKU
+                .sku(product.getSku())
                 .category(categoryDTO)
                 .brand(product.getBrand())
                 .shortDescription(product.getDescription())

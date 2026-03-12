@@ -6,7 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "inventory_locations")
+@Table(name = "\"InventoryLocations\"")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,28 +15,29 @@ public class InventoryLocation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "\"LocationId\"")
     private Long id;
 
-    @Column(nullable = false, length = 200)
+    @Column(name = "\"Name\"", nullable = false, length = 200)
     private String name;
 
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(name = "\"Code\"", nullable = false, unique = true, length = 50)
     private String code;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "\"LocationType\"", nullable = false, length = 20)
     private LocationType locationType;
 
-    @Column(length = 500)
+    @Column(name = "\"AddressText\"", length = 500)
     private String address;
 
-    @Column(nullable = false)
+    @Column(name = "\"IsActive\"", nullable = false)
     private Boolean isActive = true;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "\"CreatedAt\"", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Transient // Not in user screenshot for Locations? Keeping as transient for now if not sure, or mapping if exists.
     private LocalDateTime updatedAt;
 
     @PrePersist

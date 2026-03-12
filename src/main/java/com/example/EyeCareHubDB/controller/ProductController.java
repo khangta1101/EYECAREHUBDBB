@@ -37,56 +37,56 @@ public class ProductController {
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
+    public ResponseEntity<ProductDTO> getProductById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
     @GetMapping("/{id}/detail")
-    public ResponseEntity<ProductDetailResponse> getProductDetailById(@PathVariable Long id) {
+    public ResponseEntity<ProductDetailResponse> getProductDetailById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(productService.getProductDetailById(id));
     }
     
     @GetMapping("/search-tags/{searchTags}")
-    public ResponseEntity<ProductDTO> getProductBySearchTags(@PathVariable String searchTags) {
+    public ResponseEntity<ProductDTO> getProductBySearchTags(@PathVariable("searchTags") String searchTags) {
         return ResponseEntity.ok(productService.getProductBySearchTags(searchTags));
     }
 
     @GetMapping("/search-tags/{searchTags}/detail")
-    public ResponseEntity<ProductDetailResponse> getProductDetailBySearchTags(@PathVariable String searchTags) {
+    public ResponseEntity<ProductDetailResponse> getProductDetailBySearchTags(@PathVariable("searchTags") String searchTags) {
         return ResponseEntity.ok(productService.getProductDetailBySearchTags(searchTags));
     }
 
     // Backward compatible alias for clients still using /slug/{slug}
     @GetMapping("/slug/{slug}")
-    public ResponseEntity<ProductDTO> getProductBySlug(@PathVariable String slug) {
+    public ResponseEntity<ProductDTO> getProductBySlug(@PathVariable("slug") String slug) {
         return ResponseEntity.ok(productService.getProductBySlug(slug));
     }
 
     @GetMapping("/slug/{slug}/detail")
-    public ResponseEntity<ProductDetailResponse> getProductDetailBySlug(@PathVariable String slug) {
+    public ResponseEntity<ProductDetailResponse> getProductDetailBySlug(@PathVariable("slug") String slug) {
         return ResponseEntity.ok(productService.getProductDetailBySlug(slug));
     }
     
     @GetMapping("/category/{categoryId}")
-    public ResponseEntity<List<ProductDTO>> getProductsByCategory(@PathVariable Long categoryId) {
+    public ResponseEntity<List<ProductDTO>> getProductsByCategory(@PathVariable("categoryId") Long categoryId) {
         return ResponseEntity.ok(productService.getProductsByCategory(categoryId));
     }
     
     @GetMapping("/featured")
-    public ResponseEntity<List<ProductDTO>> getFeaturedProducts(@RequestParam(defaultValue = "10") int limit) {
+    public ResponseEntity<List<ProductDTO>> getFeaturedProducts(@RequestParam(value = "limit", defaultValue = "10") int limit) {
         return ResponseEntity.ok(productService.getFeaturedProducts(limit));
     }
     
     @GetMapping("/popular")
-    public ResponseEntity<List<ProductDTO>> getPopularProducts(@RequestParam(defaultValue = "10") int limit) {
+    public ResponseEntity<List<ProductDTO>> getPopularProducts(@RequestParam(value = "limit", defaultValue = "10") int limit) {
         return ResponseEntity.ok(productService.getPopularProducts(limit));
     }
     
     @GetMapping("/search")
     public ResponseEntity<List<ProductDTO>> searchProducts(
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int pageSize) {
+            @RequestParam("keyword") String keyword,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "pageSize", defaultValue = "10") int pageSize) {
         return ResponseEntity.ok(productService.searchProducts(keyword, page, pageSize));
     }
     
@@ -98,13 +98,13 @@ public class ProductController {
     
     @PutMapping("/{id}")
     public ResponseEntity<ProductDTO> updateProduct(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody ProductUpdateRequest request) {
         return ResponseEntity.ok(productService.updateProduct(id, request));
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteProduct(@PathVariable("id") Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }

@@ -50,42 +50,44 @@ public class ProductMediaController {
     }
     
     @GetMapping("/product/{productId}")
-    public ResponseEntity<List<ProductMediaDTO>> getMediaByProductId(@PathVariable Long productId) {
+    public ResponseEntity<List<ProductMediaDTO>> getMediaByProductId(@PathVariable("productId") Long productId) {
         return ResponseEntity.ok(mediaService.getMediaByProductId(productId));
     }
 
     @GetMapping("/product/{productId}/all")
-    public ResponseEntity<List<ProductMediaDTO>> getAllMediaByProductId(@PathVariable Long productId) {
+    public ResponseEntity<List<ProductMediaDTO>> getAllMediaByProductId(@PathVariable("productId") Long productId) {
         return ResponseEntity.ok(mediaService.getAllMediaByProductId(productId));
     }
 
     @GetMapping("/variant/{variantId}")
-    public ResponseEntity<List<ProductMediaDTO>> getMediaByVariantId(@PathVariable Long variantId) {
+    public ResponseEntity<List<ProductMediaDTO>> getMediaByVariantId(@PathVariable("variantId") Long variantId) {
         return ResponseEntity.ok(mediaService.getMediaByVariantId(variantId));
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<ProductMediaDTO> getMediaById(@PathVariable Long id) {
+    public ResponseEntity<ProductMediaDTO> getMediaById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(mediaService.getMediaById(id));
     }
     
-
-    
     @PostMapping(value = "/product/{productId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductMediaDTO> addMedia(
-            @PathVariable Long productId,
+            @PathVariable("productId") Long productId,
             @RequestPart("file") MultipartFile file,
-            @RequestParam(value = "variantId", required = false) Long variantId,
+            @RequestParam(value = "variantId", required = false) String variantIdStr,
             @RequestParam(value = "type", required = false, defaultValue = "IMAGE") String type,
-            @RequestParam(value = "displayOrder", required = false, defaultValue = "0") Integer displayOrder) {
+            @RequestParam(value = "displayOrder", required = false, defaultValue = "0") String displayOrderStr) {
+        
+        Long variantId = (variantIdStr != null && !variantIdStr.isEmpty() && !variantIdStr.equals("null")) ? Long.parseLong(variantIdStr) : null;
+        Integer displayOrder = (displayOrderStr != null && !displayOrderStr.isEmpty()) ? Integer.parseInt(displayOrderStr) : 0;
+        
         String fileDownloadUri = saveUploadedFile(file);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(mediaService.addMedia(productId, variantId, fileDownloadUri, type, displayOrder));
     }
 
-    @PostMapping(value = "/product/{productId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/product/{productId}/url", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ProductMediaDTO> addMediaByUrl(
-            @PathVariable Long productId,
+            @PathVariable("productId") Long productId,
             @RequestBody ProductMediaCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(mediaService.addMediaByUrl(
@@ -98,11 +100,15 @@ public class ProductMediaController {
     
     @PostMapping(value = "/product/{productId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductMediaDTO> uploadImage(
-            @PathVariable Long productId,
+            @PathVariable("productId") Long productId,
             @RequestPart("file") MultipartFile file,
-            @RequestParam(value = "variantId", required = false) Long variantId,
+            @RequestParam(value = "variantId", required = false) String variantIdStr,
             @RequestParam(value = "type", required = false, defaultValue = "IMAGE") String type,
-            @RequestParam(value = "displayOrder", required = false, defaultValue = "0") Integer displayOrder) {
+            @RequestParam(value = "displayOrder", required = false, defaultValue = "0") String displayOrderStr) {
+        
+        Long variantId = (variantIdStr != null && !variantIdStr.isEmpty() && !variantIdStr.equals("null")) ? Long.parseLong(variantIdStr) : null;
+        Integer displayOrder = (displayOrderStr != null && !displayOrderStr.isEmpty()) ? Integer.parseInt(displayOrderStr) : 0;
+        
         String fileDownloadUri = saveUploadedFile(file);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(mediaService.addMedia(productId, variantId, fileDownloadUri, type, displayOrder));
@@ -110,24 +116,26 @@ public class ProductMediaController {
     
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ProductMediaDTO> updateMedia(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestPart(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "type", required = false) String type,
-            @RequestParam(value = "displayOrder", required = false) Integer displayOrder) {
+            @RequestParam(value = "displayOrder", required = false) String displayOrderStr) {
+        
+        Integer displayOrder = (displayOrderStr != null && !displayOrderStr.isEmpty()) ? Integer.parseInt(displayOrderStr) : null;
         String fileDownloadUri = file != null ? saveUploadedFile(file) : null;
         return ResponseEntity.ok(mediaService.updateMedia(id, fileDownloadUri, type, displayOrder));
     }
 
-    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/{id}/url", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ProductMediaDTO> updateMediaByUrl(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody ProductMediaUpdateRequest request) {
         return ResponseEntity.ok(
                 mediaService.updateMediaByUrl(id, request.getUrl(), request.getType(), request.getDisplayOrder()));
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMedia(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteMedia(@PathVariable("id") Long id) {
         mediaService.deleteMedia(id);
         return ResponseEntity.noContent().build();
     }

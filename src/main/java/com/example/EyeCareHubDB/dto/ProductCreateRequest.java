@@ -15,6 +15,7 @@ public class ProductCreateRequest {
     private String name;
     @JsonAlias("slug")
     private String searchTags;
+    private String sku;
     private String productType;
     @JsonAlias("categoryId")
     private Long primaryCategoryId;
