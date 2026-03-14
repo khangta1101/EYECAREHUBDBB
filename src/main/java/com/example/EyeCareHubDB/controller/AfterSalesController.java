@@ -3,10 +3,10 @@ package com.example.EyeCareHubDB.controller;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.EyeCareHubDB.dto.AfterSalesDTO;
 import com.example.EyeCareHubDB.entity.AfterSalesCase;
 import com.example.EyeCareHubDB.entity.AfterSalesCase.CaseStatus;
 import com.example.EyeCareHubDB.service.AfterSalesService;
@@ -22,25 +22,25 @@ public class AfterSalesController {
     private final AfterSalesService afterSalesService;
 
     @PostMapping("/order/{orderId}")
-    public ResponseEntity<AfterSalesCase> createCase(@PathVariable("orderId") Long orderId,
+    public ResponseEntity<AfterSalesDTO> createCase(@PathVariable("orderId") Long orderId,
                                                       @RequestBody AfterSalesCase afterSalesCase) {
         return ResponseEntity.ok(afterSalesService.createCase(orderId, afterSalesCase));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<AfterSalesCase> getCase(@PathVariable("id") Long id) {
+    public ResponseEntity<AfterSalesDTO> getCase(@PathVariable("id") Long id) {
         return ResponseEntity.ok(afterSalesService.getCase(id));
     }
 
     @GetMapping("/order/{orderId}")
-    public ResponseEntity<List<AfterSalesCase>> getByOrder(@PathVariable("orderId") Long orderId) {
+    public ResponseEntity<List<AfterSalesDTO>> getByOrder(@PathVariable("orderId") Long orderId) {
         return ResponseEntity.ok(afterSalesService.getCasesByOrder(orderId));
     }
 
     @GetMapping
-    public ResponseEntity<org.springframework.data.domain.Page<AfterSalesCase>> getAll(
+    public ResponseEntity<org.springframework.data.domain.Page<AfterSalesDTO>> getAll(
             @RequestParam(name = "status", required = false) CaseStatus status,
-            @org.springframework.data.web.PageableDefault(size = 100) org.springframework.data.domain.Pageable pageable) {
+            @io.swagger.v3.oas.annotations.Parameter(hidden = true) @org.springframework.data.web.PageableDefault(size = 100) org.springframework.data.domain.Pageable pageable) {
         if (status != null) {
             return ResponseEntity.ok(afterSalesService.getCasesByStatus(status, pageable));
         }
@@ -48,7 +48,7 @@ public class AfterSalesController {
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<AfterSalesCase> updateCase(@PathVariable("id") Long id,
+    public ResponseEntity<AfterSalesDTO> updateCase(@PathVariable("id") Long id,
                                                       @RequestParam("status") CaseStatus status) {
         return ResponseEntity.ok(afterSalesService.updateCase(id, status));
     }

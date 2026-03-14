@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.EyeCareHubDB.dto.FulfillmentTaskDTO;
 import com.example.EyeCareHubDB.entity.Account;
 import com.example.EyeCareHubDB.entity.FulfillmentTask;
 import com.example.EyeCareHubDB.entity.FulfillmentTask.TaskStatus;
@@ -45,7 +46,7 @@ public class FulfillmentService {
     }
 
     @Transactional
-    public FulfillmentTask updateTask(Long taskId, TaskStatus status, Long assignedToId) {
+    public FulfillmentTaskDTO updateTask(Long taskId, TaskStatus status, Long assignedToId) {
         FulfillmentTask task = taskRepository.findById(taskId)
             .orElseThrow(() -> new RuntimeException("Task not found: " + taskId));
         task.setStatus(status);
@@ -58,14 +59,38 @@ public class FulfillmentService {
         if (assignedToId != null) {
             task.setAssignedTo(Account.builder().id(assignedToId).build());
         }
-        return taskRepository.save(task);
+        return toDTO(taskRepository.save(task));
     }
 
-    public List<FulfillmentTask> getTasksByOrder(Long orderId) {
-        return taskRepository.findByOrderIdOrderByCreatedAtAsc(orderId);
+    @Transactional(readOnly = true)
+    public List<FulfillmentTaskDTO> getTasksByOrder(Long orderId) {
+        return taskRepository.findByOrderIdOrderByCreatedAtAsc(orderId).stream()
+            .map(this::toDTO)
+            .toList();
     }
 
-    public List<FulfillmentTask> getMyTasks(Long accountId, TaskStatus status) {
-        return taskRepository.findByAssignedToIdAndStatus(accountId, status);
+    @Transactional(readOnly = true)
+    public List<FulfillmentTaskDTO> getMyTasks(Long accountId, TaskStatus status) {
+        return taskRepository.findByAssignedToIdAndStatus(accountId, status).stream()
+            .map(this::toDTO)
+            .toList();
+    }
+
+    public FulfillmentTaskDTO toDTO(FulfillmentTask task) {
+        return FulfillmentTaskDTO.builder()
+            .id(task.getId())
+            .orderId(task.getOrder().getId())
+            .orderNo(task.getOrder().getOrderNo())
+            .orderItemId(task.getOrderItem() != null ? task.getOrderItem().getId() : null)
+            .taskType(task.getTaskType().name())
+            .status(task.getStatus().name())
+            .assignedToId(task.getAssignedTo() != null ? task.getAssignedTo().getId() : null)
+            .assignedToEmail(task.getAssignedTo() != null ? task.getAssignedTo().getEmail() : null)
+            .note(task.getNote())
+            .startedAt(task.getStartedAt())
+            .doneAt(task.getDoneAt())
+            .createdAt(task.getCreatedAt())
+            .updatedAt(task.getUpdatedAt())
+            .build();
     }
 }

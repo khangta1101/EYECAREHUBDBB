@@ -37,7 +37,7 @@ public class InventoryLocation {
     @Column(name = "\"CreatedAt\"", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Transient // Not in user screenshot for Locations? Keeping as transient for now if not sure, or mapping if exists.
+    @Column(name = "\"UpdatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist

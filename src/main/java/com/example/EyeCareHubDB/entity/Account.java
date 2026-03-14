@@ -56,6 +56,7 @@ public class Account {
     @Column(name = "\"CreatedAt\"", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
     
+    @Builder.Default
     @Transient
     private LocalDateTime updatedAt = LocalDateTime.now();
     
