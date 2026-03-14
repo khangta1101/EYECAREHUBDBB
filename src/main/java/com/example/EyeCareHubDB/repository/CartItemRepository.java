@@ -10,10 +10,9 @@ import com.example.EyeCareHubDB.entity.Cart;
 import com.example.EyeCareHubDB.entity.CartItem;
 import com.example.EyeCareHubDB.entity.ProductVariant;
 
-import com.example.EyeCareHubDB.entity.CartItemId;
-
 @Repository
-public interface CartItemRepository extends JpaRepository<CartItem, CartItemId> {
+public interface CartItemRepository extends JpaRepository<CartItem, Long> {
     List<CartItem> findByCart(Cart cart);
-    Optional<CartItem> findByCartAndVariant(Cart cart, ProductVariant variant);
+    Optional<CartItem> findByCartAndVariantAndPrescriptionIdAndIsPreorder(
+        Cart cart, ProductVariant variant, Long prescriptionId, Boolean isPreorder);
 }

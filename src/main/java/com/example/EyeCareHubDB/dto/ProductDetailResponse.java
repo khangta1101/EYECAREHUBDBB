@@ -14,7 +14,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ProductDetailResponse {
-    private Long id;
+    @com.fasterxml.jackson.annotation.JsonProperty("productId")
+    @com.fasterxml.jackson.annotation.JsonAlias("id")
+    private Long productId;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("id")
+    public Long getId() {
+        return productId;
+    }
+
     private String name;
     private String slug;
     private String sku;

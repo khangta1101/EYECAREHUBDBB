@@ -21,10 +21,14 @@ public class OrderItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "OrderId", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "VariantId", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private ProductVariant variant;
 
     @Column(name = "Qty", nullable = false)

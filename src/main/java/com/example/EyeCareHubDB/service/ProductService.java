@@ -211,6 +211,7 @@ public class ProductService {
                 .isActive(product.getIsActive())
                 .createdAt(product.getCreatedAt())
                 .media(productMediaService.getAllMediaByProductId(product.getId()))
+                .variants(productVariantService.getVariantsByProductId(product.getId()))
                 .build();
     }
 
@@ -226,7 +227,7 @@ public class ProductService {
                 .build();
 
         return ProductDetailResponse.builder()
-                .id(product.getId())
+                .productId(product.getId())
                 .name(product.getName())
                 .slug(product.getSearchTags())
                 .sku(product.getSku())

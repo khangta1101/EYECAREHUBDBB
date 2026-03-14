@@ -2,11 +2,13 @@ package com.example.EyeCareHubDB.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.EyeCareHubDB.dto.CartItemDTO;
 import com.example.EyeCareHubDB.entity.Cart;
 import com.example.EyeCareHubDB.entity.CartItem;
 import com.example.EyeCareHubDB.service.CartService;
@@ -22,35 +24,36 @@ public class CartController {
     private final CartService cartService;
 
     @GetMapping("/{customerId}")
-    public ResponseEntity<Cart> getCart(@PathVariable Long customerId) {
+    public ResponseEntity<Cart> getCart(@PathVariable("customerId") Long customerId) {
         return ResponseEntity.ok(cartService.getCart(customerId));
     }
 
     @PostMapping("/{customerId}/items")
-    public ResponseEntity<CartItem> addItem(@PathVariable Long customerId,
-                                             @RequestParam Long variantId,
-                                             @RequestParam int qty) {
-        return ResponseEntity.ok(cartService.addItem(customerId, variantId, qty));
+    public ResponseEntity<CartItemDTO> addItem(@PathVariable("customerId") Long customerId,
+                                             @RequestParam("variantId") Long variantId,
+                                             @RequestParam("qty") int qty,
+                                             @RequestParam(value = "prescriptionId", required = false) Long prescriptionId,
+                                             @RequestParam(value = "isPreorder", required = false) Boolean isPreorder,
+                                             @RequestParam(value = "expectedAt", required = false) LocalDateTime expectedAt) {
+        return ResponseEntity.ok(cartService.toDTO(cartService.addItem(customerId, variantId, qty, prescriptionId, isPreorder, expectedAt)));
     }
 
-    @PutMapping("/items/{cartId}/{variantId}")
-    public ResponseEntity<CartItem> updateItem(@PathVariable Long cartId,
-                                                @PathVariable Long variantId,
-                                                @RequestParam int qty) {
-        CartItem updated = cartService.updateItem(cartId, variantId, qty);
+    @PutMapping("/items/{cartItemId}")
+    public ResponseEntity<CartItemDTO> updateItem(@PathVariable("cartItemId") Long cartItemId,
+                                                @RequestParam("qty") int qty) {
+        CartItem updated = cartService.updateItem(cartItemId, qty);
         if (updated == null) return ResponseEntity.noContent().build();
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(cartService.toDTO(updated));
     }
 
-    @DeleteMapping("/items/{cartId}/{variantId}")
-    public ResponseEntity<Void> removeItem(@PathVariable Long cartId,
-                                            @PathVariable Long variantId) {
-        cartService.removeItem(cartId, variantId);
+    @DeleteMapping("/items/{cartItemId}")
+    public ResponseEntity<Void> removeItem(@PathVariable("cartItemId") Long cartItemId) {
+        cartService.removeItem(cartItemId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{customerId}/items")
-    public ResponseEntity<List<CartItem>> getItems(@PathVariable Long customerId) {
+    public ResponseEntity<List<CartItemDTO>> getItems(@PathVariable("customerId") Long customerId) {
         return ResponseEntity.ok(cartService.getCartItems(customerId));
     }
 }

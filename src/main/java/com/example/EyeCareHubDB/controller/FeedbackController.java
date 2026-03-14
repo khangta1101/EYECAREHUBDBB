@@ -27,12 +27,12 @@ public class FeedbackController {
     }
 
     @GetMapping("/variant/{variantId}")
-    public ResponseEntity<List<Feedback>> getByVariant(@PathVariable Long variantId) {
+    public ResponseEntity<List<Feedback>> getByVariant(@PathVariable("variantId") Long variantId) {
         return ResponseEntity.ok(feedbackService.getFeedbacksByVariant(variantId));
     }
 
     @GetMapping("/order/{orderId}")
-    public ResponseEntity<List<Feedback>> getByOrder(@PathVariable Long orderId) {
+    public ResponseEntity<List<Feedback>> getByOrder(@PathVariable("orderId") Long orderId) {
         return ResponseEntity.ok(feedbackService.getFeedbacksByOrder(orderId));
     }
 
@@ -42,10 +42,10 @@ public class FeedbackController {
     }
 
     @PatchMapping("/{id}/moderate")
-    public ResponseEntity<Feedback> moderate(@PathVariable Long id,
-                                              @RequestParam(required = false) String reply,
-                                              @RequestParam Long staffAccountId,
-                                              @RequestParam(required = false) FeedbackStatus status) {
+    public ResponseEntity<Feedback> moderate(@PathVariable("id") Long id,
+                                              @RequestParam(name = "reply", required = false) String reply,
+                                              @RequestParam("staffAccountId") Long staffAccountId,
+                                              @RequestParam(name = "status", required = false) FeedbackStatus status) {
         return ResponseEntity.ok(feedbackService.replyAndModerate(id, reply, staffAccountId, status));
     }
 }

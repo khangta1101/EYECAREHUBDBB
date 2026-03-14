@@ -31,7 +31,7 @@ public class Prescription {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "OrderItemId", nullable = false, unique = true)
+    @JoinColumn(name = "OrderItemId", nullable = true, unique = true)
     private OrderItem orderItem;
 
     @Column(name = "PdTotal", precision = 5, scale = 2)

@@ -203,7 +203,7 @@ public class ProductVariantService {
         VariantStockSnapshot stockSnapshot = variantInventoryService.getStockSnapshot(variant);
 
         return ProductVariantDTO.builder()
-                .id(variant.getId())
+                .variantId(variant.getId())
                 .productId(variant.getProduct().getId())
                 .sku(variant.getSku())
                 .variantName(variant.getVariantName())

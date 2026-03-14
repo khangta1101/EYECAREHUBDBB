@@ -1,15 +1,16 @@
 package com.example.EyeCareHubDB.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.EyeCareHubDB.dto.CartItemDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.EyeCareHubDB.entity.Cart;
 import com.example.EyeCareHubDB.entity.Cart.CartStatus;
 import com.example.EyeCareHubDB.entity.CartItem;
-import com.example.EyeCareHubDB.entity.CartItemId;
 import com.example.EyeCareHubDB.entity.Customer;
 import com.example.EyeCareHubDB.entity.ProductVariant;
 import com.example.EyeCareHubDB.repository.CartItemRepository;
@@ -38,7 +39,8 @@ public class CartService {
     }
 
     @Transactional
-    public CartItem addItem(Long customerId, Long variantId, int qty) {
+    public CartItem addItem(Long customerId, Long variantId, int qty, 
+                            Long prescriptionId, Boolean isPreorder, LocalDateTime expectedAt) {
         Cart cart = getOrCreateActiveCart(customerId);
         ProductVariant variant = variantRepository.findById(variantId)
             .orElseThrow(() -> new RuntimeException("Variant not found: " + variantId));
@@ -47,13 +49,28 @@ public class CartService {
             throw new RuntimeException("Not enough stock for variant: " + variantId);
         }
 
-        BigDecimal basePrice = variant.getProduct().getSalePrice() != null
-            ? variant.getProduct().getSalePrice()
-            : variant.getProduct().getBasePrice();
+        BigDecimal basePrice = variant.getSalePrice() != null
+            ? variant.getSalePrice()
+            : variant.getBasePrice();
+        
+        // Fallback to Product transient prices if variant prices are null (defensive)
+        if (basePrice == null) {
+            basePrice = variant.getProduct().getSalePrice() != null
+                ? variant.getProduct().getSalePrice()
+                : variant.getProduct().getBasePrice();
+        }
+
+        // Final fallback to zero to avoid NullPointerException
+        if (basePrice == null) {
+            basePrice = BigDecimal.ZERO;
+        }
+
         BigDecimal additional = variant.getAdditionalPrice() != null ? variant.getAdditionalPrice() : BigDecimal.ZERO;
         BigDecimal price = basePrice.add(additional);
 
-        return cartItemRepository.findByCartAndVariant(cart, variant)
+        boolean preOrder = isPreorder != null ? isPreorder : false;
+
+        return cartItemRepository.findByCartAndVariantAndPrescriptionIdAndIsPreorder(cart, variant, prescriptionId, preOrder)
             .map(existing -> {
                 existing.setQty(existing.getQty() + qty);
                 return cartItemRepository.save(existing);
@@ -64,17 +81,18 @@ public class CartService {
                     .variant(variant)
                     .qty(qty)
                     .unitPriceSnap(price)
+                    .prescriptionId(prescriptionId)
+                    .isPreorder(preOrder)
+                    .preorderExpectedAt(expectedAt)
                     .build();
                 return cartItemRepository.save(newItem);
             });
     }
 
     @Transactional
-    public CartItem updateItem(Long cartId, Long variantId, int qty) {
-        CartItem item = cartItemRepository.findByCartAndVariant(
-            cartRepository.getReferenceById(cartId),
-            variantRepository.getReferenceById(variantId)
-        ).orElseThrow(() -> new RuntimeException("CartItem not found"));
+    public CartItem updateItem(Long cartItemId, int qty) {
+        CartItem item = cartItemRepository.findById(cartItemId)
+            .orElseThrow(() -> new RuntimeException("CartItem not found"));
         
         if (qty <= 0) {
             cartItemRepository.delete(item);
@@ -85,8 +103,8 @@ public class CartService {
     }
 
     @Transactional
-    public void removeItem(Long cartId, Long variantId) {
-        cartItemRepository.deleteById(new CartItemId(cartId, variantId));
+    public void removeItem(Long cartItemId) {
+        cartItemRepository.deleteById(cartItemId);
     }
 
     public Cart getCart(Long customerId) {
@@ -96,8 +114,25 @@ public class CartService {
             .orElseThrow(() -> new RuntimeException("No active cart found"));
     }
 
-    public List<CartItem> getCartItems(Long customerId) {
-        return getCart(customerId).getItems();
+    public List<CartItemDTO> getCartItems(Long customerId) {
+        return getCart(customerId).getItems().stream()
+            .map(this::toDTO)
+            .toList();
+    }
+
+    public CartItemDTO toDTO(CartItem item) {
+        return CartItemDTO.builder()
+            .cartId(item.getCart().getId())
+            .variantId(item.getVariant().getId())
+            .variantName(item.getVariant().getVariantName())
+            .sku(item.getVariant().getSku())
+            .qty(item.getQty())
+            .unitPrice(item.getUnitPriceSnap())
+            .isPreorder(item.getIsPreorder())
+            .preorderExpectedAt(item.getPreorderExpectedAt())
+            .prescriptionId(item.getPrescriptionId())
+            .addedAt(item.getAddedAt())
+            .build();
     }
 
     @Transactional

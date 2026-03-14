@@ -13,7 +13,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ProductVariantDTO {
-    private Long id;
+    @com.fasterxml.jackson.annotation.JsonProperty("variantId")
+    @com.fasterxml.jackson.annotation.JsonAlias("id")
+    private Long variantId;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("id")
+    public Long getId() {
+        return variantId;
+    }
+
     private Long productId;
     private String sku;
     private String variantName;

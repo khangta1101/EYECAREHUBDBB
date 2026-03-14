@@ -8,7 +8,6 @@ import lombok.*;
 
 @Entity
 @Table(name = "CartItems")
-@IdClass(CartItemId.class)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,22 +15,39 @@ import lombok.*;
 public class CartItem {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "\"CartItemId\"")
+    private Long id;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CartId", nullable = false)
+    @JoinColumn(name = "\"CartId\"", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Cart cart;
 
-    @Id
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "VariantId", nullable = false)
+    @JoinColumn(name = "\"VariantId\"", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private ProductVariant variant;
 
-    @Column(name = "Qty", nullable = false)
+    @Column(name = "\"Qty\"", nullable = false)
     private Integer qty;
 
-    @Column(name = "UnitPriceSnap", nullable = false, precision = 10, scale = 2)
+    @Column(name = "\"UnitPriceSnap\"", nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPriceSnap;
 
-    @Column(name = "AddedAt", nullable = false, updatable = false)
+    @Column(name = "\"IsPreorder\"", nullable = false)
+    @Builder.Default
+    private Boolean isPreorder = false;
+
+    @Column(name = "\"PreorderExpectedAt\"")
+    private LocalDateTime preorderExpectedAt;
+
+    @Column(name = "\"PrescriptionId\"")
+    private Long prescriptionId;
+
+    @Column(name = "\"AddedAt\"", nullable = false, updatable = false)
     private LocalDateTime addedAt;
 
     @PrePersist
