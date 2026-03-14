@@ -20,7 +20,6 @@ import com.example.EyeCareHubDB.entity.Order;
 import com.example.EyeCareHubDB.entity.Order.OrderStatus;
 import com.example.EyeCareHubDB.entity.Order.OrderType;
 import com.example.EyeCareHubDB.entity.OrderItem;
-import com.example.EyeCareHubDB.entity.ProductVariant;
 import com.example.EyeCareHubDB.entity.Promotion;
 import com.example.EyeCareHubDB.repository.CustomerRepository;
 import com.example.EyeCareHubDB.repository.OrderRepository;

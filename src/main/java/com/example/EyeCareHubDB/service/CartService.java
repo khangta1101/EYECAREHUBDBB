@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.example.EyeCareHubDB.dto.CartDTO;
 import com.example.EyeCareHubDB.dto.CartItemDTO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -107,6 +108,7 @@ public class CartService {
         cartItemRepository.deleteById(cartItemId);
     }
 
+    @Transactional(readOnly = true)
     public Cart getCart(Long customerId) {
         Customer customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
@@ -114,10 +116,31 @@ public class CartService {
             .orElseThrow(() -> new RuntimeException("No active cart found"));
     }
 
+    @Transactional(readOnly = true)
+    public CartDTO getCartDTO(Long customerId) {
+        return toCartDTO(getCart(customerId));
+    }
+
+    @Transactional(readOnly = true)
     public List<CartItemDTO> getCartItems(Long customerId) {
-        return getCart(customerId).getItems().stream()
+        Customer customer = customerRepository.findById(customerId)
+            .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
+        Cart cart = cartRepository.findByCustomerAndStatus(customer, CartStatus.ACTIVE)
+            .orElseThrow(() -> new RuntimeException("No active cart found"));
+        return cart.getItems().stream()
             .map(this::toDTO)
             .toList();
+    }
+
+    public CartDTO toCartDTO(Cart cart) {
+        return CartDTO.builder()
+            .id(cart.getId())
+            .customerId(cart.getCustomer().getId())
+            .status(cart.getStatus().name())
+            .items(cart.getItems().stream().map(this::toDTO).toList())
+            .createdAt(cart.getCreatedAt())
+            .updatedAt(cart.getUpdatedAt())
+            .build();
     }
 
     public CartItemDTO toDTO(CartItem item) {

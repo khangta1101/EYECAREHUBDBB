@@ -8,8 +8,8 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.EyeCareHubDB.dto.CartDTO;
 import com.example.EyeCareHubDB.dto.CartItemDTO;
-import com.example.EyeCareHubDB.entity.Cart;
 import com.example.EyeCareHubDB.entity.CartItem;
 import com.example.EyeCareHubDB.service.CartService;
 
@@ -24,8 +24,8 @@ public class CartController {
     private final CartService cartService;
 
     @GetMapping("/{customerId}")
-    public ResponseEntity<Cart> getCart(@PathVariable("customerId") Long customerId) {
-        return ResponseEntity.ok(cartService.getCart(customerId));
+    public ResponseEntity<CartDTO> getCart(@PathVariable("customerId") Long customerId) {
+        return ResponseEntity.ok(cartService.getCartDTO(customerId));
     }
 
     @PostMapping("/{customerId}/items")
