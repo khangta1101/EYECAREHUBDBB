@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.example.EyeCareHubDB.dto.ProductMediaDTO;
 import com.example.EyeCareHubDB.entity.Product;
@@ -145,9 +146,34 @@ public class ProductMediaService {
                 .productId(media.getProduct().getId())
                 .variantId(media.getVariant() != null ? media.getVariant().getId() : null)
                 .type(media.getType().name())
-                .url(media.getUrl())
+                .url(toPublicMediaUrl(media.getUrl()))
                 .displayOrder(media.getDisplayOrder())
                 .createdAt(media.getCreatedAt())
                 .build();
+    }
+
+    private String toPublicMediaUrl(String url) {
+        if (url == null || url.isBlank()) {
+            return url;
+        }
+
+        String normalized = url.trim();
+        if (normalized.startsWith("http://") || normalized.startsWith("https://") || normalized.startsWith("data:")) {
+            return normalized;
+        }
+
+        if (!normalized.startsWith("/")) {
+            normalized = "/" + normalized;
+        }
+
+        try {
+            String baseUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .build()
+                    .toUriString();
+            return baseUrl + normalized;
+        } catch (IllegalStateException ex) {
+            // No HTTP request context (e.g. non-web execution); keep stored relative URL.
+            return normalized;
+        }
     }
 }
