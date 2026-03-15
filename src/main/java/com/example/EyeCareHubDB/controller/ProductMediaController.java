@@ -51,7 +51,7 @@ public class ProductMediaController {
     
     @GetMapping("/product/{productId}")
     public ResponseEntity<List<ProductMediaDTO>> getMediaByProductId(@PathVariable("productId") Long productId) {
-        return ResponseEntity.ok(mediaService.getMediaByProductId(productId));
+        return ResponseEntity.ok(mediaService.getAllMediaByProductId(productId));
     }
 
     @GetMapping("/product/{productId}/all")
