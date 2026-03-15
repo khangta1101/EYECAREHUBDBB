@@ -132,6 +132,13 @@ public class CartService {
             .toList();
     }
 
+    @Transactional(readOnly = true)
+    public CartItemDTO getCartItemDTO(Long cartItemId) {
+        CartItem item = cartItemRepository.findById(cartItemId)
+            .orElseThrow(() -> new RuntimeException("CartItem not found with id: " + cartItemId));
+        return toDTO(item);
+    }
+
     public CartDTO toCartDTO(Cart cart) {
         return CartDTO.builder()
             .id(cart.getId())
@@ -145,6 +152,7 @@ public class CartService {
 
     public CartItemDTO toDTO(CartItem item) {
         return CartItemDTO.builder()
+            .id(item.getId())
             .cartId(item.getCart().getId())
             .variantId(item.getVariant().getId())
             .variantName(item.getVariant().getVariantName())

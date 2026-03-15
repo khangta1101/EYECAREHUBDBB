@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class CartItemDTO {
+    private Long id;
     private Long cartId;
     private Long variantId;
     private String variantName;

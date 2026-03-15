@@ -38,6 +38,11 @@ public class CartController {
         return ResponseEntity.ok(cartService.toDTO(cartService.addItem(customerId, variantId, qty, prescriptionId, isPreorder, expectedAt)));
     }
 
+    @GetMapping("/items/{cartItemId}")
+    public ResponseEntity<CartItemDTO> getCartItem(@PathVariable("cartItemId") Long cartItemId) {
+        return ResponseEntity.ok(cartService.getCartItemDTO(cartItemId));
+    }
+
     @PutMapping("/items/{cartItemId}")
     public ResponseEntity<CartItemDTO> updateItem(@PathVariable("cartItemId") Long cartItemId,
                                                 @RequestParam("qty") int qty) {
