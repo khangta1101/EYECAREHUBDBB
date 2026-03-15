@@ -32,7 +32,7 @@ public class InventoryStock {
     @Column(name = "\"ReservedQty\"", nullable = false)
     private Integer reservedQty = 0;
 
-    @Transient // Not in screenshot for Stocks, but exists for Locations. Let's make it transient to be safe or check.
+    @Column(name = "\"CreatedAt\"", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "\"UpdatedAt\"", nullable = false)
