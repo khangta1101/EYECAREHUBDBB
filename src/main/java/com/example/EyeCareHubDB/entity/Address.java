@@ -20,7 +20,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "addresses")
+@Table(name = "\"Addresses\"")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,71 +29,57 @@ public class Address {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "\"AddressId\"")
     private Long id;
     
     @ManyToOne
-    @JoinColumn(name = "customer_id", nullable = false)
+    @JoinColumn(name = "CustomerId", nullable = false)
     private Customer customer;
     
-    @Column(nullable = false, length = 100)
+    @Column(name = "\"RecipientName\"", nullable = false, length = 100)
     private String recipientName;
     
-    @Column(nullable = false, length = 20)
+    @Column(name = "\"RecipientPhone\"", nullable = false, length = 20)
     private String phoneNumber;
     
-    @Column(nullable = false, length = 255)
+    @Column(name = "\"Line1\"", nullable = false, length = 255)
     private String addressLine1;
     
-    @Column(length = 255)
+    @Column(name = "\"Line2\"", length = 255)
     private String addressLine2;
     
-    @Column(nullable = false, length = 100)
-    private String city;
-    
-    @Column(length = 100)
+    @Column(name = "\"Ward\"", length = 100)
+    private String ward;
+
+    @Column(name = "\"District\"", length = 100)
     private String district;
     
-    @Column(length = 100)
-    private String ward;
-    
-    @Column(nullable = false, length = 100)
+    @Column(name = "\"Province\"", nullable = false, length = 100)
     private String province;
     
-    @Column(length = 20)
+    @Column(name = "\"PostalCode\"", length = 20)
     private String postalCode;
     
-    @Column(nullable = false, length = 50)
+    @Column(name = "\"Country\"", nullable = false, length = 50)
+    @Builder.Default
     private String country = "Vietnam";
     
-    @Column(nullable = false)
-    private Boolean isDefault = false;
+    @Column(name = "\"IsDefaultShip\"", nullable = false)
+    @Builder.Default
+    private Boolean isDefaultShip = false;
+
+    @Column(name = "\"IsDefaultBill\"", nullable = false)
+    @Builder.Default
+    private Boolean isDefaultBill = false;
     
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private AddressType type = AddressType.HOME;
-    
-    @Column(nullable = false, updatable = false)
+    @Column(name = "\"CreatedAt\"", nullable = false, updatable = false)
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
-    
-    @Column(nullable = false)
-    private LocalDateTime updatedAt = LocalDateTime.now();
     
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
-        if (updatedAt == null) {
-            updatedAt = LocalDateTime.now();
-        }
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-    
-    public enum AddressType {
-        HOME, OFFICE, OTHER
     }
 }

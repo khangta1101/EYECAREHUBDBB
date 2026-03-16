@@ -17,16 +17,14 @@ public class AddressDTO {
     private String phoneNumber;
     private String addressLine1;
     private String addressLine2;
-    private String city;
-    private String district;
     private String ward;
+    private String district;
     private String province;
     private String postalCode;
     private String country;
-    private Boolean isDefault;
-    private String type;
+    private Boolean isDefaultShip;
+    private Boolean isDefaultBill;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }
 
 

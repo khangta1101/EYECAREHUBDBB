@@ -15,10 +15,8 @@ public interface AddressRepository extends JpaRepository<Address, Long> {
     
     List<Address> findByCustomerId(Long customerId);
     
-    List<Address> findByCustomerIdAndType(Long customerId, Address.AddressType type);
+    Optional<Address> findByCustomerIdAndIsDefaultShipTrue(Long customerId);
     
-    Optional<Address> findByCustomerIdAndIsDefaultTrue(Long customerId);
-    
-    @Query("SELECT a FROM Address a WHERE a.customer.id = :customerId AND a.isDefault = true")
+    @Query("SELECT a FROM Address a WHERE a.customer.id = :customerId AND a.isDefaultShip = true")
     Optional<Address> findDefaultAddressByCustomerId(@Param("customerId") Long customerId);
 }

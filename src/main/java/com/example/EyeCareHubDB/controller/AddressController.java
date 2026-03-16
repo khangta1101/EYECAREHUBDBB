@@ -30,23 +30,23 @@ public class AddressController {
     private final AddressService addressService;
     
     @GetMapping("/customer/{customerId}")
-    public ResponseEntity<List<AddressDTO>> getAddressesByCustomerId(@PathVariable Long customerId) {
+    public ResponseEntity<List<AddressDTO>> getAddressesByCustomerId(@PathVariable("customerId") Long customerId) {
         return ResponseEntity.ok(addressService.getAddressesByCustomerId(customerId));
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<AddressDTO> getAddressById(@PathVariable Long id) {
+    public ResponseEntity<AddressDTO> getAddressById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(addressService.getAddressById(id));
     }
     
     @GetMapping("/customer/{customerId}/default")
-    public ResponseEntity<AddressDTO> getDefaultAddress(@PathVariable Long customerId) {
+    public ResponseEntity<AddressDTO> getDefaultAddress(@PathVariable("customerId") Long customerId) {
         return ResponseEntity.ok(addressService.getDefaultAddress(customerId));
     }
     
     @PostMapping("/customer/{customerId}")
     public ResponseEntity<AddressDTO> createAddress(
-            @PathVariable Long customerId,
+            @PathVariable("customerId") Long customerId,
             @RequestBody AddressCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(addressService.createAddress(customerId, request));
@@ -54,13 +54,13 @@ public class AddressController {
     
     @PutMapping("/{id}")
     public ResponseEntity<AddressDTO> updateAddress(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody AddressUpdateRequest request) {
         return ResponseEntity.ok(addressService.updateAddress(id, request));
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAddress(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteAddress(@PathVariable("id") Long id) {
         addressService.deleteAddress(id);
         return ResponseEntity.noContent().build();
     }

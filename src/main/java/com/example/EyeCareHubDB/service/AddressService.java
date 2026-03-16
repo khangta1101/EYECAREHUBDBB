@@ -50,14 +50,13 @@ public class AddressService {
                 .phoneNumber(request.getPhoneNumber())
                 .addressLine1(request.getAddressLine1())
                 .addressLine2(request.getAddressLine2())
-                .city(request.getCity())
-                .district(request.getDistrict())
                 .ward(request.getWard())
+                .district(request.getDistrict())
                 .province(request.getProvince())
                 .postalCode(request.getPostalCode())
                 .country(request.getCountry() != null ? request.getCountry() : "Vietnam")
-                .type(Address.AddressType.valueOf(request.getType() != null ? request.getType() : "HOME"))
-                .isDefault(false)
+                .isDefaultShip(request.getIsDefaultShip() != null ? request.getIsDefaultShip() : false)
+                .isDefaultBill(request.getIsDefaultBill() != null ? request.getIsDefaultBill() : false)
                 .build();
         
         Address saved = addressRepository.save(address);
@@ -80,14 +79,11 @@ public class AddressService {
         if (request.getAddressLine2() != null) {
             address.setAddressLine2(request.getAddressLine2());
         }
-        if (request.getCity() != null) {
-            address.setCity(request.getCity());
+        if (request.getWard() != null) {
+            address.setWard(request.getWard());
         }
         if (request.getDistrict() != null) {
             address.setDistrict(request.getDistrict());
-        }
-        if (request.getWard() != null) {
-            address.setWard(request.getWard());
         }
         if (request.getProvince() != null) {
             address.setProvince(request.getProvince());
@@ -98,11 +94,11 @@ public class AddressService {
         if (request.getCountry() != null) {
             address.setCountry(request.getCountry());
         }
-        if (request.getType() != null) {
-            address.setType(Address.AddressType.valueOf(request.getType()));
+        if (request.getIsDefaultShip() != null) {
+            address.setIsDefaultShip(request.getIsDefaultShip());
         }
-        if (request.getIsDefault() != null) {
-            address.setIsDefault(request.getIsDefault());
+        if (request.getIsDefaultBill() != null) {
+            address.setIsDefaultBill(request.getIsDefaultBill());
         }
         
         Address updated = addressRepository.save(address);
@@ -125,11 +121,11 @@ public class AddressService {
         }
         
         addressRepository.findDefaultAddressByCustomerId(customerId).ifPresent(defaultAddr -> {
-            defaultAddr.setIsDefault(false);
+            defaultAddr.setIsDefaultShip(false);
             addressRepository.save(defaultAddr);
         });
         
-        address.setIsDefault(true);
+        address.setIsDefaultShip(true);
         addressRepository.save(address);
     }
     
@@ -140,16 +136,14 @@ public class AddressService {
                 .phoneNumber(address.getPhoneNumber())
                 .addressLine1(address.getAddressLine1())
                 .addressLine2(address.getAddressLine2())
-                .city(address.getCity())
-                .district(address.getDistrict())
                 .ward(address.getWard())
+                .district(address.getDistrict())
                 .province(address.getProvince())
                 .postalCode(address.getPostalCode())
                 .country(address.getCountry())
-                .isDefault(address.getIsDefault())
-                .type(address.getType().name())
+                .isDefaultShip(address.getIsDefaultShip())
+                .isDefaultBill(address.getIsDefaultBill())
                 .createdAt(address.getCreatedAt())
-                .updatedAt(address.getUpdatedAt())
                 .build();
     }
 }
