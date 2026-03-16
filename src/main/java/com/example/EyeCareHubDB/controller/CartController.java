@@ -35,7 +35,7 @@ public class CartController {
                                              @RequestParam(value = "prescriptionId", required = false) Long prescriptionId,
                                              @RequestParam(value = "isPreorder", required = false) Boolean isPreorder,
                                              @RequestParam(value = "expectedAt", required = false) LocalDateTime expectedAt) {
-        return ResponseEntity.ok(cartService.toDTO(cartService.addItem(customerId, variantId, qty, prescriptionId, isPreorder, expectedAt)));
+        return ResponseEntity.ok(cartService.addItem(customerId, variantId, qty, prescriptionId, isPreorder, expectedAt));
     }
 
     @GetMapping("/items/{cartItemId}")
@@ -46,9 +46,9 @@ public class CartController {
     @PutMapping("/items/{cartItemId}")
     public ResponseEntity<CartItemDTO> updateItem(@PathVariable("cartItemId") Long cartItemId,
                                                 @RequestParam("qty") int qty) {
-        CartItem updated = cartService.updateItem(cartItemId, qty);
+        CartItemDTO updated = cartService.updateItem(cartItemId, qty);
         if (updated == null) return ResponseEntity.noContent().build();
-        return ResponseEntity.ok(cartService.toDTO(updated));
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/items/{cartItemId}")

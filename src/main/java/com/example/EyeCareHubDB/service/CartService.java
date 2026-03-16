@@ -40,7 +40,7 @@ public class CartService {
     }
 
     @Transactional
-    public CartItem addItem(Long customerId, Long variantId, int qty, 
+    public CartItemDTO addItem(Long customerId, Long variantId, int qty, 
                             Long prescriptionId, Boolean isPreorder, LocalDateTime expectedAt) {
         Cart cart = getOrCreateActiveCart(customerId);
         ProductVariant variant = variantRepository.findById(variantId)
@@ -74,7 +74,7 @@ public class CartService {
         return cartItemRepository.findByCartAndVariantAndPrescriptionIdAndIsPreorder(cart, variant, prescriptionId, preOrder)
             .map(existing -> {
                 existing.setQty(existing.getQty() + qty);
-                return cartItemRepository.save(existing);
+                return toDTO(cartItemRepository.save(existing));
             })
             .orElseGet(() -> {
                 CartItem newItem = CartItem.builder()
@@ -86,12 +86,12 @@ public class CartService {
                     .isPreorder(preOrder)
                     .preorderExpectedAt(expectedAt)
                     .build();
-                return cartItemRepository.save(newItem);
+                return toDTO(cartItemRepository.save(newItem));
             });
     }
 
     @Transactional
-    public CartItem updateItem(Long cartItemId, int qty) {
+    public CartItemDTO updateItem(Long cartItemId, int qty) {
         CartItem item = cartItemRepository.findById(cartItemId)
             .orElseThrow(() -> new RuntimeException("CartItem not found"));
         
@@ -100,7 +100,7 @@ public class CartService {
             return null;
         }
         item.setQty(qty);
-        return cartItemRepository.save(item);
+        return toDTO(cartItemRepository.save(item));
     }
 
     @Transactional
