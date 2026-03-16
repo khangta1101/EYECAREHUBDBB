@@ -1,11 +1,10 @@
 package com.example.EyeCareHubDB.controller;
 
-import io.swagger.v3.oas.annotations.tags.Tag;import java.math.BigDecimal;
-
+import io.swagger.v3.oas.annotations.tags.Tag;
+import java.math.BigDecimal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import com.example.EyeCareHubDB.entity.Order;
+import com.example.EyeCareHubDB.dto.*;
 import com.example.EyeCareHubDB.entity.Order.OrderStatus;
 import com.example.EyeCareHubDB.entity.Order.OrderType;
 import com.example.EyeCareHubDB.service.OrderService;
@@ -23,7 +22,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping("/checkout")
-    public ResponseEntity<Order> checkout(@RequestParam("customerId") Long customerId,
+    public ResponseEntity<OrderDTO> checkout(@RequestParam("customerId") Long customerId,
                                            @RequestParam(value = "addressId", required = false) Long addressId,
                                            @RequestParam("orderType") OrderType orderType,
                                            @RequestParam(value = "promotionCode", required = false) String promotionCode,
@@ -32,12 +31,12 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Order> getOrder(@PathVariable("id") Long id) {
+    public ResponseEntity<OrderDTO> getOrder(@PathVariable("id") Long id) {
         return ResponseEntity.ok(orderService.getOrder(id));
     }
 
     @GetMapping("/customer/{customerId}")
-    public ResponseEntity<Page<Order>> getByCustomer(
+    public ResponseEntity<Page<OrderDTO>> getByCustomer(
             @PathVariable("customerId") Long customerId,
             @RequestParam(value = "page", defaultValue = "0") Integer page,
             @RequestParam(value = "size", defaultValue = "10") Integer size) {
@@ -45,14 +44,14 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<Order>> getAll(
+    public ResponseEntity<Page<OrderDTO>> getAll(
             @RequestParam(value = "page", defaultValue = "0") Integer page,
             @RequestParam(value = "size", defaultValue = "10") Integer size) {
         return ResponseEntity.ok(orderService.getAllOrders(PageRequest.of(page, size)));
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<Order> updateStatus(@PathVariable("id") Long id,
+    public ResponseEntity<OrderDTO> updateStatus(@PathVariable("id") Long id,
                                                @RequestParam("status") OrderStatus status) {
         return ResponseEntity.ok(orderService.updateStatus(id, status));
     }
