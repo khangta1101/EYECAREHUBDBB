@@ -1,7 +1,6 @@
 package com.example.EyeCareHubDB.service;
 
 import java.math.BigDecimal;
-
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.EyeCareHubDB.entity.Address;
 import com.example.EyeCareHubDB.entity.Cart;
 import com.example.EyeCareHubDB.entity.CartItem;
 import com.example.EyeCareHubDB.entity.Customer;
@@ -21,6 +21,7 @@ import com.example.EyeCareHubDB.entity.Order.OrderStatus;
 import com.example.EyeCareHubDB.entity.Order.OrderType;
 import com.example.EyeCareHubDB.entity.OrderItem;
 import com.example.EyeCareHubDB.entity.Promotion;
+import com.example.EyeCareHubDB.repository.AddressRepository;
 import com.example.EyeCareHubDB.repository.CustomerRepository;
 import com.example.EyeCareHubDB.repository.OrderRepository;
 
@@ -32,6 +33,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
+    private final AddressRepository addressRepository;
     private final CartService cartService;
     private final PromotionService promotionService;
     private final InventoryService inventoryService;
@@ -55,6 +57,9 @@ public class OrderService {
                           String promotionCode, BigDecimal shippingFee) {
         Customer customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
+
+        Address shippingAddress = addressRepository.findById(addressId)
+            .orElseThrow(() -> new RuntimeException("Address not found: " + addressId));
 
         Cart cart = cartService.getCart(customerId);
         List<CartItem> items = cart.getItems();
@@ -80,6 +85,7 @@ public class OrderService {
         Order order = Order.builder()
             .orderNo("ORD-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase())
             .customer(customer)
+            .shippingAddress(shippingAddress)
             .orderType(orderType)
             .status(OrderStatus.NEW)
             .promotion(promotion)
