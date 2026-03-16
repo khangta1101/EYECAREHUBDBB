@@ -6,12 +6,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.EyeCareHubDB.dto.AccountDTO;
+import com.example.EyeCareHubDB.dto.AddressDTO;
+import com.example.EyeCareHubDB.dto.CustomerDTO;
+import com.example.EyeCareHubDB.dto.OrderDTO;
+import com.example.EyeCareHubDB.dto.OrderItemDTO;
+import com.example.EyeCareHubDB.dto.PrescriptionDTO;
+import com.example.EyeCareHubDB.dto.ProductVariantDTO;
+import com.example.EyeCareHubDB.dto.PromotionDTO;
+import com.example.EyeCareHubDB.entity.Account;
 import com.example.EyeCareHubDB.entity.Address;
 import com.example.EyeCareHubDB.entity.Cart;
 import com.example.EyeCareHubDB.entity.CartItem;
@@ -20,6 +30,8 @@ import com.example.EyeCareHubDB.entity.Order;
 import com.example.EyeCareHubDB.entity.Order.OrderStatus;
 import com.example.EyeCareHubDB.entity.Order.OrderType;
 import com.example.EyeCareHubDB.entity.OrderItem;
+import com.example.EyeCareHubDB.entity.Prescription;
+import com.example.EyeCareHubDB.entity.ProductVariant;
 import com.example.EyeCareHubDB.entity.Promotion;
 import com.example.EyeCareHubDB.repository.AddressRepository;
 import com.example.EyeCareHubDB.repository.CustomerRepository;
@@ -53,7 +65,7 @@ public class OrderService {
 
 
     @Transactional
-    public Order checkout(Long customerId, Long addressId, OrderType orderType,
+    public OrderDTO checkout(Long customerId, Long addressId, OrderType orderType,
                           String promotionCode, BigDecimal shippingFee) {
         Customer customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
@@ -114,11 +126,11 @@ public class OrderService {
 
         Order saved = orderRepository.save(order);
         cartService.markCartOrdered(cart);
-        return saved;
+        return toDTO(saved);
     }
 
     @Transactional
-    public Order updateStatus(Long orderId, OrderStatus newStatus) {
+    public OrderDTO updateStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
         OrderStatus current = order.getStatus();
@@ -135,21 +147,168 @@ public class OrderService {
                 inventoryService.confirmStock(i.getVariant().getId(), i.getQty()));
         }
         order.setStatus(newStatus);
-        return orderRepository.save(order);
+        return toDTO(orderRepository.save(order));
     }
 
-    public Order getOrder(Long id) {
+    public OrderDTO getOrder(Long id) {
         return orderRepository.findById(id)
+            .map(this::toDTO)
             .orElseThrow(() -> new RuntimeException("Order not found: " + id));
     }
 
-    public Page<Order> getOrdersByCustomer(Long customerId, Pageable pageable) {
+    public Page<OrderDTO> getOrdersByCustomer(Long customerId, Pageable pageable) {
         Customer customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
-        return orderRepository.findByCustomerOrderByCreatedAtDesc(customer, pageable);
+        return orderRepository.findByCustomerOrderByCreatedAtDesc(customer, pageable)
+            .map(this::toDTO);
     }
 
-    public Page<Order> getAllOrders(Pageable pageable) {
-        return orderRepository.findAll(pageable);
+    public Page<OrderDTO> getAllOrders(Pageable pageable) {
+        return orderRepository.findAll(pageable)
+            .map(this::toDTO);
+    }
+
+    private OrderDTO toDTO(Order order) {
+        if (order == null) return null;
+        return OrderDTO.builder()
+            .id(order.getId())
+            .orderNo(order.getOrderNo())
+            .customer(toCustomerDTO(order.getCustomer()))
+            .shippingAddress(toAddressDTO(order.getShippingAddress()))
+            .salesStaff(toAccountDTO(order.getSalesStaff()))
+            .channel(order.getChannel() != null ? order.getChannel().name() : null)
+            .orderType(order.getOrderType() != null ? order.getOrderType().name() : null)
+            .status(order.getStatus() != null ? order.getStatus().name() : null)
+            .promotion(toPromotionDTO(order.getPromotion()))
+            .subtotal(order.getSubtotal())
+            .discountTotal(order.getDiscountTotal())
+            .shippingFee(order.getShippingFee())
+            .grandTotal(order.getGrandTotal())
+            .note(order.getNote())
+            .items(order.getItems().stream().map(this::toOrderItemDTO).collect(Collectors.toList()))
+            .createdAt(order.getCreatedAt())
+            .build();
+    }
+
+    private CustomerDTO toCustomerDTO(Customer customer) {
+        if (customer == null) return null;
+        return CustomerDTO.builder()
+            .id(customer.getId())
+            .accountId(customer.getAccount() != null ? customer.getAccount().getId() : null)
+            .firstName(customer.getFirstName())
+            .lastName(customer.getLastName())
+            .gender(customer.getGender() != null ? customer.getGender().name() : null)
+            .dateOfBirth(customer.getDateOfBirth())
+            .avatarUrl(customer.getAvatarUrl())
+            .createdAt(customer.getCreatedAt())
+            .updatedAt(customer.getUpdatedAt())
+            .build();
+    }
+
+    private AddressDTO toAddressDTO(Address address) {
+        if (address == null) return null;
+        return AddressDTO.builder()
+            .id(address.getId())
+            .recipientName(address.getRecipientName())
+            .phoneNumber(address.getPhoneNumber())
+            .addressLine1(address.getAddressLine1())
+            .addressLine2(address.getAddressLine2())
+            .ward(address.getWard())
+            .district(address.getDistrict())
+            .province(address.getProvince())
+            .postalCode(address.getPostalCode())
+            .country(address.getCountry())
+            .isDefaultShip(address.getIsDefaultShip())
+            .isDefaultBill(address.getIsDefaultBill())
+            .createdAt(address.getCreatedAt())
+            .build();
+    }
+
+    private AccountDTO toAccountDTO(Account account) {
+        if (account == null) return null;
+        return AccountDTO.builder()
+            .id(account.getId())
+            .email(account.getEmail())
+            .phoneNumber(account.getPhoneNumber())
+            .role(account.getRole() != null ? account.getRole().name() : null)
+            .status(account.getStatus() != null ? account.getStatus().name() : null)
+            .createdAt(account.getCreatedAt())
+            .updatedAt(account.getUpdatedAt())
+            .lastLoginAt(account.getLastLoginAt())
+            .build();
+    }
+
+    private PromotionDTO toPromotionDTO(Promotion promotion) {
+        if (promotion == null) return null;
+        return PromotionDTO.builder()
+            .id(promotion.getId())
+            .code(promotion.getCode())
+            .name(promotion.getName())
+            .promoType(promotion.getPromoType() != null ? promotion.getPromoType().name() : null)
+            .discountType(promotion.getDiscountType() != null ? promotion.getDiscountType().name() : null)
+            .discountValue(promotion.getDiscountValue())
+            .minOrderAmount(promotion.getMinOrderAmount())
+            .maxDiscount(promotion.getMaxDiscount())
+            .startAt(promotion.getStartAt())
+            .endAt(promotion.getEndAt())
+            .ruleJson(promotion.getRuleJson())
+            .isActive(promotion.getIsActive())
+            .createdAt(promotion.getCreatedAt())
+            .build();
+    }
+
+    private OrderItemDTO toOrderItemDTO(OrderItem item) {
+        if (item == null) return null;
+        return OrderItemDTO.builder()
+            .id(item.getId())
+            .variant(toProductVariantDTO(item.getVariant()))
+            .qty(item.getQty())
+            .unitPrice(item.getUnitPrice())
+            .lineTotal(item.getLineTotal())
+            .isPrescription(item.getIsPrescription())
+            .preorderExpectedAt(item.getPreorderExpectedAt())
+            .preorderReceivedAt(item.getPreorderReceivedAt())
+            .itemNote(item.getItemNote())
+            .prescription(toPrescriptionDTO(item.getPrescription()))
+            .build();
+    }
+
+    private ProductVariantDTO toProductVariantDTO(ProductVariant variant) {
+        if (variant == null) return null;
+        return ProductVariantDTO.builder()
+            .variantId(variant.getId())
+            .productId(variant.getProduct().getId())
+            .sku(variant.getSku())
+            .variantName(variant.getVariantName())
+            .color(variant.getColor())
+            .size(variant.getSize())
+            .material(variant.getMaterial())
+            .attributesJson(variant.getAttributesJson())
+            .currency(variant.getCurrency())
+            .basePrice(variant.getBasePrice())
+            .salePrice(variant.getSalePrice())
+            .isActive(variant.getIsActive())
+            .createdAt(variant.getCreatedAt())
+            .build();
+    }
+
+    private PrescriptionDTO toPrescriptionDTO(Prescription prescription) {
+        if (prescription == null) return null;
+        return PrescriptionDTO.builder()
+            .id(prescription.getId())
+            .pdTotal(prescription.getPdTotal())
+            .pdLeft(prescription.getPdLeft())
+            .pdRight(prescription.getPdRight())
+            .sphereOD(prescription.getSphereOD())
+            .cylOD(prescription.getCylOD())
+            .axisOD(prescription.getAxisOD())
+            .addOD(prescription.getAddOD())
+            .sphereOS(prescription.getSphereOS())
+            .cylOS(prescription.getCylOS())
+            .axisOS(prescription.getAxisOS())
+            .addOS(prescription.getAddOS())
+            .prescriptionFileUrl(prescription.getPrescriptionFileUrl())
+            .notes(prescription.getNotes())
+            .build();
     }
 }
