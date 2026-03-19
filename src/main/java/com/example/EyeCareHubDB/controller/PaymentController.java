@@ -13,10 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.EyeCareHubDB.dto.CreatePaymentRequest;
+import com.example.EyeCareHubDB.dto.PaymentDTO;
 import com.example.EyeCareHubDB.dto.VnPayCallbackResponse;
 import com.example.EyeCareHubDB.dto.VnPayCreatePaymentRequest;
 import com.example.EyeCareHubDB.dto.VnPayCreatePaymentResponse;
-import com.example.EyeCareHubDB.entity.Payment;
 import com.example.EyeCareHubDB.entity.Payment.PaymentStatus;
 import com.example.EyeCareHubDB.service.PaymentService;
 
@@ -32,44 +33,59 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    @PostMapping("/confirm")
+    public PaymentDTO confirm(@RequestBody Map<String, String> body) {
+        String txnRef = body.get("transactionRef");
+        return paymentService.confirmPayment(txnRef);
+    }
+
     @PostMapping
-    public ResponseEntity<Payment> createPayment(@RequestBody Payment payment) {
+    public ResponseEntity<PaymentDTO> createPayment(@RequestBody CreatePaymentRequest payment) {
         return ResponseEntity.ok(paymentService.createPayment(payment));
     }
 
     @PostMapping("/vnpay/create")
     public ResponseEntity<VnPayCreatePaymentResponse> createVnPayPayment(@RequestBody VnPayCreatePaymentRequest request,
-                                                                          HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
         return ResponseEntity.ok(paymentService.createVnPayPayment(request, resolveClientIp(httpRequest)));
     }
 
+    @io.swagger.v3.oas.annotations.Operation(summary = "VNPay Callback", description = "Endpoint for VNPay to return transaction result. Not intended for manual use.")
     @GetMapping("/vnpay/callback")
-    public ResponseEntity<VnPayCallbackResponse> handleVnPayCallback(@RequestParam Map<String, String> queryParams) {
-        return ResponseEntity.ok(paymentService.handleVnPayCallback(queryParams));
+    public ResponseEntity<VnPayCallbackResponse> vnpayCallback(@RequestParam("params") Map<String, String> params) {
+
+        VnPayCallbackResponse response = paymentService.handleVnPayCallback(params);
+
+        return ResponseEntity.ok(response); // ✅ trả JSON
     }
 
     @GetMapping("/order/{orderId}")
-    public ResponseEntity<List<Payment>> getByOrder(@PathVariable Long orderId) {
+    public ResponseEntity<List<PaymentDTO>> getByOrder(@PathVariable("orderId") Long orderId) {
         return ResponseEntity.ok(paymentService.getPaymentsByOrder(orderId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Payment> getPayment(@PathVariable Long id) {
+    public ResponseEntity<PaymentDTO> getPayment(@PathVariable("id") Long id) {
         return ResponseEntity.ok(paymentService.getPayment(id));
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<Payment> updateStatus(@PathVariable Long id,
-                                                 @RequestParam PaymentStatus status,
-                                                 @RequestParam(required = false) String transactionRef) {
-        return ResponseEntity.ok(paymentService.updatePaymentStatus(id, status, transactionRef));
+    public ResponseEntity<PaymentDTO> updateStatus(@PathVariable("id") Long id,
+            @RequestParam("status") PaymentStatus status,
+            @RequestParam(value = "transactionRef", required = false) String transactionRef) {
+        return ResponseEntity.ok(paymentService.updateStatus(id, status, transactionRef));
     }
 
     private String resolveClientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+        String ip = (forwarded != null && !forwarded.isBlank())
+                ? forwarded.split(",")[0].trim()
+                : request.getRemoteAddr();
+
+        // Convert IPv6 loopback to IPv4 for VNPAY compatibility
+        if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
+            return "127.0.0.1";
         }
-        return request.getRemoteAddr();
+        return ip;
     }
 }

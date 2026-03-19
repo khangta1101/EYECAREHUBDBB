@@ -36,17 +36,17 @@ public class AccountController {
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<AccountDTO> getAccountById(@PathVariable Long id) {
+    public ResponseEntity<AccountDTO> getAccountById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(accountService.getAccountById(id));
     }
     
     @GetMapping("/email/{email}")
-    public ResponseEntity<AccountDTO> getAccountByEmail(@PathVariable String email) {
+    public ResponseEntity<AccountDTO> getAccountByEmail(@PathVariable("email") String email) {
         return ResponseEntity.ok(accountService.getAccountByEmail(email));
     }
     
     @GetMapping("/role/{role}")
-    public ResponseEntity<List<AccountDTO>> getAccountsByRole(@PathVariable String role) {
+    public ResponseEntity<List<AccountDTO>> getAccountsByRole(@PathVariable("role") String role) {
         return ResponseEntity.ok(accountService.getAccountsByRole(Account.AccountRole.valueOf(role)));
     }
     
@@ -57,13 +57,13 @@ public class AccountController {
     
     @PutMapping("/{id}")
     public ResponseEntity<AccountDTO> updateAccount(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody AccountUpdateRequest request) {
         return ResponseEntity.ok(accountService.updateAccount(id, request));
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAccount(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteAccount(@PathVariable("id") Long id) {
         accountService.deleteAccount(id);
         return ResponseEntity.noContent().build();
     }

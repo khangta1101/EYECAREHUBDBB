@@ -40,8 +40,12 @@ public class CartService {
     }
 
     @Transactional
-    public CartItemDTO addItem(Long customerId, Long variantId, int qty, 
-                            Long prescriptionId, Boolean isPreorder, LocalDateTime expectedAt) {
+    public CartItemDTO addItem(Long customerId, com.example.EyeCareHubDB.dto.AddToCartRequest request) {
+        Long variantId = request.getVariantId();
+        int qty = request.getQty();
+        Long prescriptionId = request.getPrescriptionId();
+        LocalDateTime expectedAt = request.getExpectedAt();
+        
         Cart cart = getOrCreateActiveCart(customerId);
         ProductVariant variant = variantRepository.findById(variantId)
             .orElseThrow(() -> new RuntimeException("Variant not found: " + variantId));
@@ -69,7 +73,7 @@ public class CartService {
         BigDecimal additional = variant.getAdditionalPrice() != null ? variant.getAdditionalPrice() : BigDecimal.ZERO;
         BigDecimal price = basePrice.add(additional);
 
-        boolean preOrder = isPreorder != null ? isPreorder : false;
+        boolean preOrder = request.getIsPreorder() != null ? request.getIsPreorder() : false;
 
         return cartItemRepository.findByCartAndVariantAndPrescriptionIdAndIsPreorder(cart, variant, prescriptionId, preOrder)
             .map(existing -> {
@@ -118,18 +122,30 @@ public class CartService {
 
     @Transactional(readOnly = true)
     public CartDTO getCartDTO(Long customerId) {
-        return toCartDTO(getCart(customerId));
+        Customer customer = customerRepository.findById(customerId)
+            .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
+
+        return cartRepository.findByCustomerAndStatus(customer, CartStatus.ACTIVE)
+            .map(this::toCartDTO)
+            .orElseGet(() -> CartDTO.builder()
+                .customerId(customerId)
+                .status(CartStatus.ACTIVE.name())
+                .items(List.of())
+                .subtotal(BigDecimal.ZERO)
+                .itemCount(0)
+                .build());
     }
 
     @Transactional(readOnly = true)
     public List<CartItemDTO> getCartItems(Long customerId) {
         Customer customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
-        Cart cart = cartRepository.findByCustomerAndStatus(customer, CartStatus.ACTIVE)
-            .orElseThrow(() -> new RuntimeException("No active cart found"));
-        return cart.getItems().stream()
-            .map(this::toDTO)
-            .toList();
+
+        return cartRepository.findByCustomerAndStatus(customer, CartStatus.ACTIVE)
+            .map(cart -> cart.getItems().stream()
+                .map(this::toDTO)
+                .toList())
+            .orElse(List.of());
     }
 
     @Transactional(readOnly = true)
@@ -140,11 +156,17 @@ public class CartService {
     }
 
     public CartDTO toCartDTO(Cart cart) {
+        BigDecimal subtotal = cart.getItems().stream()
+            .map(item -> item.getUnitPriceSnap().multiply(BigDecimal.valueOf(item.getQty())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         return CartDTO.builder()
             .id(cart.getId())
             .customerId(cart.getCustomer().getId())
             .status(cart.getStatus().name())
             .items(cart.getItems().stream().map(this::toDTO).toList())
+            .subtotal(subtotal)
+            .itemCount(cart.getItems().stream().mapToInt(CartItem::getQty).sum())
             .createdAt(cart.getCreatedAt())
             .updatedAt(cart.getUpdatedAt())
             .build();

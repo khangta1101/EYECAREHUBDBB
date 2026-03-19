@@ -36,17 +36,17 @@ public class CustomerController {
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<CustomerDTO> getCustomerById(@PathVariable Long id) {
+    public ResponseEntity<CustomerDTO> getCustomerById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(customerService.getCustomerById(id));
     }
     
     @GetMapping("/account/{accountId}")
-    public ResponseEntity<CustomerDTO> getCustomerByAccountId(@PathVariable Long accountId) {
+    public ResponseEntity<CustomerDTO> getCustomerByAccountId(@PathVariable("accountId") Long accountId) {
         return ResponseEntity.ok(customerService.getCustomerByAccountId(accountId));
     }
     
     @GetMapping("/search")
-    public ResponseEntity<List<CustomerDTO>> searchCustomersByName(@RequestParam String name) {
+    public ResponseEntity<List<CustomerDTO>> searchCustomersByName(@RequestParam("name") String name) {
         return ResponseEntity.ok(customerService.searchCustomersByName(name));
     }
     
@@ -58,20 +58,20 @@ public class CustomerController {
     
     @PutMapping("/{id}")
     public ResponseEntity<CustomerDTO> updateCustomer(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody CustomerUpdateRequest request) {
         return ResponseEntity.ok(customerService.updateCustomer(id, request));
     }
     
     @PutMapping("/account/{accountId}")
     public ResponseEntity<CustomerDTO> updateCustomerByAccountId(
-            @PathVariable Long accountId,
+            @PathVariable("accountId") Long accountId,
             @RequestBody CustomerUpdateRequest request) {
         return ResponseEntity.ok(customerService.updateCustomerByAccountId(accountId, request));
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteCustomer(@PathVariable("id") Long id) {
         customerService.deleteCustomer(id);
         return ResponseEntity.noContent().build();
     }

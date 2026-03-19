@@ -1,7 +1,7 @@
 package com.example.EyeCareHubDB.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,13 +12,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CartDTO {
+public class PaymentDTO {
     private Long id;
-    private Long customerId;
+    private Long orderId;
+    private String paymentPurpose;
+    private String provider;
+    private BigDecimal amount;
+    private String currency;
     private String status;
-    private List<CartItemDTO> items;
-    private java.math.BigDecimal subtotal;
-    private Integer itemCount;
+    private String transactionRef;
+    private LocalDateTime paidAt;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

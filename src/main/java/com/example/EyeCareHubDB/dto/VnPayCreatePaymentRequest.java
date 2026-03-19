@@ -16,7 +16,6 @@ import lombok.NoArgsConstructor;
 public class VnPayCreatePaymentRequest {
     private Long orderId;
     private PaymentPurpose paymentPurpose;
-    private BigDecimal amount;
     private String orderInfo;
     private String returnUrl;
 }

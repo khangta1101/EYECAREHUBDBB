@@ -78,9 +78,18 @@ public class Order {
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "UpdatedAt")
+    private LocalDateTime updatedAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     public enum Channel {

@@ -25,6 +25,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
+        ex.printStackTrace(); // Log stack trace to console for debugging
         HttpStatus status = ex.getMessage() != null && ex.getMessage().startsWith("Email already registered")
                 ? HttpStatus.CONFLICT
                 : HttpStatus.BAD_REQUEST;

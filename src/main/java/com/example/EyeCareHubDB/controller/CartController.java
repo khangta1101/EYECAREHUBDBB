@@ -2,15 +2,12 @@ package com.example.EyeCareHubDB.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import java.time.LocalDateTime;
 import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import com.example.EyeCareHubDB.dto.CartDTO;
 import com.example.EyeCareHubDB.dto.CartItemDTO;
-import com.example.EyeCareHubDB.entity.CartItem;
+import com.example.EyeCareHubDB.dto.AddToCartRequest;
 import com.example.EyeCareHubDB.service.CartService;
 
 import lombok.RequiredArgsConstructor;
@@ -30,12 +27,8 @@ public class CartController {
 
     @PostMapping("/{customerId}/items")
     public ResponseEntity<CartItemDTO> addItem(@PathVariable("customerId") Long customerId,
-                                             @RequestParam("variantId") Long variantId,
-                                             @RequestParam("qty") int qty,
-                                             @RequestParam(value = "prescriptionId", required = false) Long prescriptionId,
-                                             @RequestParam(value = "isPreorder", required = false) Boolean isPreorder,
-                                             @RequestParam(value = "expectedAt", required = false) LocalDateTime expectedAt) {
-        return ResponseEntity.ok(cartService.addItem(customerId, variantId, qty, prescriptionId, isPreorder, expectedAt));
+                                             @RequestBody AddToCartRequest request) {
+        return ResponseEntity.ok(cartService.addItem(customerId, request));
     }
 
     @GetMapping("/items/{cartItemId}")

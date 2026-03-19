@@ -14,7 +14,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,51 +30,48 @@ public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "PaymentId")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "\"OrderId\"", nullable = false)
+    @JoinColumn(name = "OrderId", nullable = false)
     private Order order;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "PaymentPurpose", nullable = false, length = 20)
     private PaymentPurpose paymentPurpose;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(name = "Provider", nullable = false, length = 30)
     private PaymentProvider provider;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "Amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
+    @Column(name = "Currency", length = 10)
+    @Builder.Default
+    private String currency = "VND";
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "Status", nullable = false, length = 20)
     @Builder.Default
     private PaymentStatus status = PaymentStatus.PENDING;
 
-    @Column(length = 200)
+    @Column(name = "TransactionRef", length = 200)
     private String transactionRef;
 
+    @Column(name = "PaidAt")
     private LocalDateTime paidAt;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "RawResponseJson", columnDefinition = "TEXT")
     private String rawResponseJson;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    @Column(nullable = false)
-    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 
     public enum PaymentPurpose {

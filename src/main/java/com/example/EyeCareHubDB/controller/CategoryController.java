@@ -35,12 +35,12 @@ public class CategoryController {
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<CategoryDTO> getCategoryById(@PathVariable Long id) {
+    public ResponseEntity<CategoryDTO> getCategoryById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(categoryService.getCategoryById(id));
     }
     
     @GetMapping("/slug/{slug}")
-    public ResponseEntity<CategoryDTO> getCategoryBySlug(@PathVariable String slug) {
+    public ResponseEntity<CategoryDTO> getCategoryBySlug(@PathVariable("slug") String slug) {
         return ResponseEntity.ok(categoryService.getCategoryBySlug(slug));
     }
     
@@ -50,7 +50,7 @@ public class CategoryController {
     }
     
     @GetMapping("/{parentId}/sub-categories")
-    public ResponseEntity<List<CategoryDTO>> getSubCategories(@PathVariable Long parentId) {
+    public ResponseEntity<List<CategoryDTO>> getSubCategories(@PathVariable("parentId") Long parentId) {
         return ResponseEntity.ok(categoryService.getSubCategories(parentId));
     }
     
@@ -62,13 +62,13 @@ public class CategoryController {
     
     @PutMapping("/{id}")
     public ResponseEntity<CategoryDTO> updateCategory(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody CategoryUpdateRequest request) {
         return ResponseEntity.ok(categoryService.updateCategory(id, request));
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteCategory(@PathVariable("id") Long id) {
         categoryService.deleteCategory(id);
         return ResponseEntity.noContent().build();
     }

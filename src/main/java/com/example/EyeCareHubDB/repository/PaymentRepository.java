@@ -13,7 +13,11 @@ import com.example.EyeCareHubDB.entity.Payment.PaymentPurpose;
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByOrder(Order order);
+
     List<Payment> findByOrderId(Long orderId);
+
     Optional<Payment> findByTransactionRef(String transactionRef);
+
     List<Payment> findByOrderAndPaymentPurpose(Order order, PaymentPurpose purpose);
+
 }

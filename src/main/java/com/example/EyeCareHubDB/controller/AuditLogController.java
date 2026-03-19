@@ -26,13 +26,13 @@ public class AuditLogController {
     }
 
     @GetMapping("/entity")
-    public ResponseEntity<List<AuditLog>> getByEntity(@RequestParam String entityType,
-                                                       @RequestParam Long entityId) {
+    public ResponseEntity<List<AuditLog>> getByEntity(@RequestParam("entityType") String entityType,
+                                                       @RequestParam("entityId") Long entityId) {
         return ResponseEntity.ok(auditLogService.getLogsByEntity(entityType, entityId));
     }
 
     @GetMapping("/actor/{accountId}")
-    public ResponseEntity<List<AuditLog>> getByActor(@PathVariable Long accountId) {
+    public ResponseEntity<List<AuditLog>> getByActor(@PathVariable("accountId") Long accountId) {
         return ResponseEntity.ok(auditLogService.getLogsByActor(accountId));
     }
 }

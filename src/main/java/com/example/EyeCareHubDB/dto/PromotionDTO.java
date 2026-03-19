@@ -25,5 +25,6 @@ public class PromotionDTO {
     private LocalDateTime endAt;
     private String ruleJson;
     private Boolean isActive;
+    private String discountDisplay;
     private LocalDateTime createdAt;
 }

@@ -1,0 +1,1379 @@
+﻿package com.example.EyeCareHubDB.controller;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.EyeCareHubDB.dto.AccountCreateRequest;
+import com.example.EyeCareHubDB.dto.AccountDTO;
+import com.example.EyeCareHubDB.dto.AccountUpdateRequest;
+import com.example.EyeCareHubDB.entity.Account;
+import com.example.EyeCareHubDB.service.AccountService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/v1/accounts")
+@RequiredArgsConstructor
+@Tag(name = "Accounts", description = "Account Management APIs")
+public class AccountController {
+    
+    private final AccountService accountService;
+    
+    @GetMapping
+    public ResponseEntity<List<AccountDTO>> getAllAccounts() {
+        return ResponseEntity.ok(accountService.getAllAccounts());
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<AccountDTO> getAccountById(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(accountService.getAccountById(id));
+    }
+    
+    @GetMapping("/email/{email}")
+    public ResponseEntity<AccountDTO> getAccountByEmail(@PathVariable("email") String email) {
+        return ResponseEntity.ok(accountService.getAccountByEmail(email));
+    }
+    
+    @GetMapping("/role/{role}")
+    public ResponseEntity<List<AccountDTO>> getAccountsByRole(@PathVariable("role") String role) {
+        return ResponseEntity.ok(accountService.getAccountsByRole(Account.AccountRole.valueOf(role)));
+    }
+    
+    @PostMapping
+    public ResponseEntity<AccountDTO> createAccount(@RequestBody AccountCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(accountService.createAccount(request));
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<AccountDTO> updateAccount(
+            @PathVariable("id") Long id,
+            @RequestBody AccountUpdateRequest request) {
+        return ResponseEntity.ok(accountService.updateAccount(id, request));
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteAccount(@PathVariable("id") Long id) {
+        accountService.deleteAccount(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.EyeCareHubDB.dto.AddressCreateRequest;
+import com.example.EyeCareHubDB.dto.AddressDTO;
+import com.example.EyeCareHubDB.dto.AddressUpdateRequest;
+import com.example.EyeCareHubDB.service.AddressService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/v1/addresses")
+@RequiredArgsConstructor
+@Tag(name = "Addresses", description = "Address Management APIs")
+public class AddressController {
+    
+    private final AddressService addressService;
+    
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<List<AddressDTO>> getAddressesByCustomerId(@PathVariable("customerId") Long customerId) {
+        return ResponseEntity.ok(addressService.getAddressesByCustomerId(customerId));
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<AddressDTO> getAddressById(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(addressService.getAddressById(id));
+    }
+    
+    @GetMapping("/customer/{customerId}/default")
+    public ResponseEntity<AddressDTO> getDefaultAddress(@PathVariable("customerId") Long customerId) {
+        return ResponseEntity.ok(addressService.getDefaultAddress(customerId));
+    }
+    
+    @PostMapping("/customer/{customerId}")
+    public ResponseEntity<AddressDTO> createAddress(
+            @PathVariable("customerId") Long customerId,
+            @RequestBody AddressCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(addressService.createAddress(customerId, request));
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<AddressDTO> updateAddress(
+            @PathVariable("id") Long id,
+            @RequestBody AddressUpdateRequest request) {
+        return ResponseEntity.ok(addressService.updateAddress(id, request));
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteAddress(@PathVariable("id") Long id) {
+        addressService.deleteAddress(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.util.List;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.EyeCareHubDB.dto.AfterSalesDTO;
+import com.example.EyeCareHubDB.entity.AfterSalesCase;
+import com.example.EyeCareHubDB.entity.AfterSalesCase.CaseStatus;
+import com.example.EyeCareHubDB.service.AfterSalesService;
+
+import lombok.RequiredArgsConstructor;
+
+@Tag(name = "After Sales")
+@RestController
+@RequestMapping("/api/v1/after-sales")
+@RequiredArgsConstructor
+public class AfterSalesController {
+
+    private final AfterSalesService afterSalesService;
+
+    @PostMapping("/order/{orderId}")
+    public ResponseEntity<AfterSalesDTO> createCase(@PathVariable("orderId") Long orderId,
+                                                      @RequestBody AfterSalesCase afterSalesCase) {
+        return ResponseEntity.ok(afterSalesService.createCase(orderId, afterSalesCase));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<AfterSalesDTO> getCase(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(afterSalesService.getCase(id));
+    }
+
+    @GetMapping("/order/{orderId}")
+    public ResponseEntity<List<AfterSalesDTO>> getByOrder(@PathVariable("orderId") Long orderId) {
+        return ResponseEntity.ok(afterSalesService.getCasesByOrder(orderId));
+    }
+
+    @GetMapping
+    public ResponseEntity<org.springframework.data.domain.Page<AfterSalesDTO>> getAll(
+            @RequestParam(name = "status", required = false) CaseStatus status,
+            @io.swagger.v3.oas.annotations.Parameter(hidden = true) @org.springframework.data.web.PageableDefault(size = 100) org.springframework.data.domain.Pageable pageable) {
+        if (status != null) {
+            return ResponseEntity.ok(afterSalesService.getCasesByStatus(status, pageable));
+        }
+        return ResponseEntity.ok(afterSalesService.getAllCases(pageable));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<AfterSalesDTO> updateCase(@PathVariable("id") Long id,
+                                                      @RequestParam("status") CaseStatus status) {
+        return ResponseEntity.ok(afterSalesService.updateCase(id, status));
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.EyeCareHubDB.entity.AuditLog;
+import com.example.EyeCareHubDB.service.AuditLogService;
+
+import lombok.RequiredArgsConstructor;
+
+@Tag(name = "Audit Log")
+@RestController
+@RequestMapping("/api/audit-logs")
+@RequiredArgsConstructor
+public class AuditLogController {
+
+    private final AuditLogService auditLogService;
+
+    @GetMapping
+    public ResponseEntity<List<AuditLog>> getAll() {
+        return ResponseEntity.ok(auditLogService.getAllLogs());
+    }
+
+    @GetMapping("/entity")
+    public ResponseEntity<List<AuditLog>> getByEntity(@RequestParam("entityType") String entityType,
+                                                       @RequestParam("entityId") Long entityId) {
+        return ResponseEntity.ok(auditLogService.getLogsByEntity(entityType, entityId));
+    }
+
+    @GetMapping("/actor/{accountId}")
+    public ResponseEntity<List<AuditLog>> getByActor(@PathVariable("accountId") Long accountId) {
+        return ResponseEntity.ok(auditLogService.getLogsByActor(accountId));
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.EyeCareHubDB.dto.AccountResponse;
+import com.example.EyeCareHubDB.dto.ForgotPasswordRequest;
+import com.example.EyeCareHubDB.dto.LoginRequest;
+import com.example.EyeCareHubDB.dto.RegisterRequest;
+import com.example.EyeCareHubDB.dto.ResetPasswordRequest;
+import com.example.EyeCareHubDB.entity.Account;
+import com.example.EyeCareHubDB.service.AuthenticationService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/auth")
+@RequiredArgsConstructor
+@Tag(name = "Authentication", description = "Authentication and Authorization APIs")
+public class AuthenticationController {
+    
+    private final AuthenticationService authenticationService;
+    
+    @PostMapping("/register")
+    public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
+        authenticationService.register(request);
+        return ResponseEntity.ok("Register successfully");
+    }
+    
+    @PostMapping("/login")
+    public ResponseEntity<AccountResponse> login(@RequestBody LoginRequest loginRequest) {
+        AccountResponse response = authenticationService.login(loginRequest);
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        authenticationService.forgotPassword(request);
+        return ResponseEntity.ok("Send email successfully");
+    }
+    
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest request) {
+        authenticationService.resetPassword(request);
+        return ResponseEntity.ok("Reset password successfully");
+    }
+    
+    @PostMapping("/admin/create-account")
+    public ResponseEntity<String> createAccountByAdmin(@RequestBody RegisterRequest request) {
+        Account newAccount = authenticationService.createAccountByAdmin(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body("Admin created account successfully for user: " + newAccount.getEmail());
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.util.List;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import com.example.EyeCareHubDB.dto.CartDTO;
+import com.example.EyeCareHubDB.dto.CartItemDTO;
+import com.example.EyeCareHubDB.dto.AddToCartRequest;
+import com.example.EyeCareHubDB.service.CartService;
+
+import lombok.RequiredArgsConstructor;
+
+@Tag(name = "Cart")
+@RestController
+@RequestMapping("/api/cart")
+@RequiredArgsConstructor
+public class CartController {
+
+    private final CartService cartService;
+
+    @GetMapping("/{customerId}")
+    public ResponseEntity<CartDTO> getCart(@PathVariable("customerId") Long customerId) {
+        return ResponseEntity.ok(cartService.getCartDTO(customerId));
+    }
+
+    @PostMapping("/{customerId}/items")
+    public ResponseEntity<CartItemDTO> addItem(@PathVariable("customerId") Long customerId,
+                                             @RequestBody AddToCartRequest request) {
+        return ResponseEntity.ok(cartService.addItem(customerId, request));
+    }
+
+    @GetMapping("/items/{cartItemId}")
+    public ResponseEntity<CartItemDTO> getCartItem(@PathVariable("cartItemId") Long cartItemId) {
+        return ResponseEntity.ok(cartService.getCartItemDTO(cartItemId));
+    }
+
+    @PutMapping("/items/{cartItemId}")
+    public ResponseEntity<CartItemDTO> updateItem(@PathVariable("cartItemId") Long cartItemId,
+                                                @RequestParam("qty") int qty) {
+        CartItemDTO updated = cartService.updateItem(cartItemId, qty);
+        if (updated == null) return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/items/{cartItemId}")
+    public ResponseEntity<Void> removeItem(@PathVariable("cartItemId") Long cartItemId) {
+        cartService.removeItem(cartItemId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{customerId}/items")
+    public ResponseEntity<List<CartItemDTO>> getItems(@PathVariable("customerId") Long customerId) {
+        return ResponseEntity.ok(cartService.getCartItems(customerId));
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.EyeCareHubDB.dto.CategoryCreateRequest;
+import com.example.EyeCareHubDB.dto.CategoryDTO;
+import com.example.EyeCareHubDB.dto.CategoryUpdateRequest;
+import com.example.EyeCareHubDB.service.CategoryService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/v1/categories")
+@RequiredArgsConstructor
+@Tag(name = "Categories", description = "Category Management APIs")
+public class CategoryController {
+    
+    private final CategoryService categoryService;
+    
+    @GetMapping
+    public ResponseEntity<List<CategoryDTO>> getAllCategories() {
+        return ResponseEntity.ok(categoryService.getAllCategories());
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<CategoryDTO> getCategoryById(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(categoryService.getCategoryById(id));
+    }
+    
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<CategoryDTO> getCategoryBySlug(@PathVariable("slug") String slug) {
+        return ResponseEntity.ok(categoryService.getCategoryBySlug(slug));
+    }
+    
+    @GetMapping("/root")
+    public ResponseEntity<List<CategoryDTO>> getRootCategories() {
+        return ResponseEntity.ok(categoryService.getRootCategories());
+    }
+    
+    @GetMapping("/{parentId}/sub-categories")
+    public ResponseEntity<List<CategoryDTO>> getSubCategories(@PathVariable("parentId") Long parentId) {
+        return ResponseEntity.ok(categoryService.getSubCategories(parentId));
+    }
+    
+    @PostMapping
+    public ResponseEntity<CategoryDTO> createCategory(@RequestBody CategoryCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(categoryService.createCategory(request));
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<CategoryDTO> updateCategory(
+            @PathVariable("id") Long id,
+            @RequestBody CategoryUpdateRequest request) {
+        return ResponseEntity.ok(categoryService.updateCategory(id, request));
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCategory(@PathVariable("id") Long id) {
+        categoryService.deleteCategory(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.EyeCareHubDB.dto.CustomerCreateRequest;
+import com.example.EyeCareHubDB.dto.CustomerDTO;
+import com.example.EyeCareHubDB.dto.CustomerUpdateRequest;
+import com.example.EyeCareHubDB.service.CustomerService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/v1/customers")
+@RequiredArgsConstructor
+@Tag(name = "Customers", description = "Customer Management APIs")
+public class CustomerController {
+    
+    private final CustomerService customerService;
+    
+    @GetMapping
+    public ResponseEntity<List<CustomerDTO>> getAllCustomers() {
+        return ResponseEntity.ok(customerService.getAllCustomers());
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<CustomerDTO> getCustomerById(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(customerService.getCustomerById(id));
+    }
+    
+    @GetMapping("/account/{accountId}")
+    public ResponseEntity<CustomerDTO> getCustomerByAccountId(@PathVariable("accountId") Long accountId) {
+        return ResponseEntity.ok(customerService.getCustomerByAccountId(accountId));
+    }
+    
+    @GetMapping("/search")
+    public ResponseEntity<List<CustomerDTO>> searchCustomersByName(@RequestParam("name") String name) {
+        return ResponseEntity.ok(customerService.searchCustomersByName(name));
+    }
+    
+    @PostMapping
+    public ResponseEntity<CustomerDTO> createCustomer(@RequestBody CustomerCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(customerService.createCustomer(request.getAccountId(), request));
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<CustomerDTO> updateCustomer(
+            @PathVariable("id") Long id,
+            @RequestBody CustomerUpdateRequest request) {
+        return ResponseEntity.ok(customerService.updateCustomer(id, request));
+    }
+    
+    @PutMapping("/account/{accountId}")
+    public ResponseEntity<CustomerDTO> updateCustomerByAccountId(
+            @PathVariable("accountId") Long accountId,
+            @RequestBody CustomerUpdateRequest request) {
+        return ResponseEntity.ok(customerService.updateCustomerByAccountId(accountId, request));
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCustomer(@PathVariable("id") Long id) {
+        customerService.deleteCustomer(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.EyeCareHubDB.entity.Feedback;
+import com.example.EyeCareHubDB.entity.Feedback.FeedbackStatus;
+import com.example.EyeCareHubDB.service.FeedbackService;
+
+import lombok.RequiredArgsConstructor;
+
+@Tag(name = "Feedback")
+@RestController
+@RequestMapping("/api/feedbacks")
+@RequiredArgsConstructor
+public class FeedbackController {
+
+    private final FeedbackService feedbackService;
+
+    @PostMapping
+    public ResponseEntity<Feedback> create(@RequestBody Feedback feedback) {
+        return ResponseEntity.ok(feedbackService.createFeedback(feedback));
+    }
+
+    @GetMapping("/variant/{variantId}")
+    public ResponseEntity<List<Feedback>> getByVariant(@PathVariable("variantId") Long variantId) {
+        return ResponseEntity.ok(feedbackService.getFeedbacksByVariant(variantId));
+    }
+
+    @GetMapping("/order/{orderId}")
+    public ResponseEntity<List<Feedback>> getByOrder(@PathVariable("orderId") Long orderId) {
+        return ResponseEntity.ok(feedbackService.getFeedbacksByOrder(orderId));
+    }
+
+    @GetMapping("/pending")
+    public ResponseEntity<List<Feedback>> getPending() {
+        return ResponseEntity.ok(feedbackService.getPendingFeedbacks());
+    }
+
+    @PatchMapping("/{id}/moderate")
+    public ResponseEntity<Feedback> moderate(@PathVariable("id") Long id,
+                                              @RequestParam(name = "reply", required = false) String reply,
+                                              @RequestParam("staffAccountId") Long staffAccountId,
+                                              @RequestParam(name = "status", required = false) FeedbackStatus status) {
+        return ResponseEntity.ok(feedbackService.replyAndModerate(id, reply, staffAccountId, status));
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.EyeCareHubDB.dto.FulfillmentTaskDTO;
+import com.example.EyeCareHubDB.entity.FulfillmentTask.TaskStatus;
+import com.example.EyeCareHubDB.service.FulfillmentService;
+
+import lombok.RequiredArgsConstructor;
+
+@Tag(name = "Fulfillment")
+@RestController
+@RequestMapping("/api/v1/fulfillment")
+@RequiredArgsConstructor
+public class FulfillmentController {
+
+    private final FulfillmentService fulfillmentService;
+
+    @PostMapping("/order/{orderId}/generate-tasks")
+    public ResponseEntity<Void> generateTasks(@PathVariable("orderId") Long orderId) {
+        fulfillmentService.generateTasksForOrder(orderId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/order/{orderId}")
+    public ResponseEntity<List<FulfillmentTaskDTO>> getByOrder(@PathVariable("orderId") Long orderId) {
+        return ResponseEntity.ok(fulfillmentService.getTasksByOrder(orderId));
+    }
+
+    @PatchMapping("/tasks/{taskId}")
+    public ResponseEntity<FulfillmentTaskDTO> updateTask(@PathVariable("taskId") Long taskId,
+                                                       @RequestParam("status") TaskStatus status,
+                                                       @RequestParam(value = "assignedToId", required = false) Long assignedToId) {
+        return ResponseEntity.ok(fulfillmentService.updateTask(taskId, status, assignedToId));
+    }
+
+    @GetMapping("/my-tasks")
+    public ResponseEntity<List<FulfillmentTaskDTO>> getMyTasks(@RequestParam("accountId") Long accountId,
+                                                             @RequestParam(value = "status", defaultValue = "PENDING") TaskStatus status) {
+        return ResponseEntity.ok(fulfillmentService.getMyTasks(accountId, status));
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.EyeCareHubDB.dto.InventoryLocationDTO;
+import com.example.EyeCareHubDB.dto.InventoryStockDTO;
+import com.example.EyeCareHubDB.entity.InventoryLocation;
+import com.example.EyeCareHubDB.service.InventoryService;
+
+import lombok.RequiredArgsConstructor;
+
+@Tag(name = "Inventory")
+@RestController
+@RequestMapping("/api/v1/inventory")
+@RequiredArgsConstructor
+public class InventoryController {
+
+    private final InventoryService inventoryService;
+
+    @GetMapping("/locations")
+    public ResponseEntity<List<InventoryLocationDTO>> getLocations() {
+        return ResponseEntity.ok(inventoryService.getAllLocations());
+    }
+
+    @PostMapping("/locations")
+    public ResponseEntity<InventoryLocationDTO> createLocation(@RequestBody InventoryLocation location) {
+        return ResponseEntity.ok(inventoryService.createLocation(location));
+    }
+
+    @GetMapping("/stock/variant/{variantId}")
+    public ResponseEntity<List<InventoryStockDTO>> getStockByVariant(@PathVariable("variantId") Long variantId) {
+        return ResponseEntity.ok(inventoryService.getStockByVariant(variantId));
+    }
+
+    @GetMapping("/stock/location/{locationId}")
+    public ResponseEntity<List<InventoryStockDTO>> getStockByLocation(@PathVariable("locationId") Long locationId) {
+        return ResponseEntity.ok(inventoryService.getStockByLocation(locationId));
+    }
+
+    @PatchMapping("/stock/adjust")
+    public ResponseEntity<InventoryStockDTO> adjustStock(@RequestParam("locationId") Long locationId,
+                                                       @RequestParam("variantId") Long variantId,
+                                                       @RequestParam("delta") int delta) {
+        return ResponseEntity.ok(inventoryService.adjustStock(locationId, variantId, delta));
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import com.example.EyeCareHubDB.dto.*;
+import com.example.EyeCareHubDB.entity.Order.OrderStatus;
+import com.example.EyeCareHubDB.service.OrderService;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import lombok.RequiredArgsConstructor;
+
+@Tag(name = "Order")
+@RestController
+@RequestMapping("/api/v1/orders")
+@RequiredArgsConstructor
+public class OrderController {
+
+    private final OrderService orderService;
+
+    @PostMapping("/checkout")
+    public ResponseEntity<OrderDTO> checkout(@RequestBody CheckoutRequest request) {
+        return ResponseEntity.ok(orderService.checkout(request));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<OrderDTO> getOrder(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(orderService.getOrder(id));
+    }
+
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<Page<OrderDTO>> getByCustomer(
+            @PathVariable("customerId") Long customerId,
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        return ResponseEntity.ok(orderService.getOrdersByCustomer(customerId, PageRequest.of(page, size)));
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<OrderDTO>> getAll(
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        return ResponseEntity.ok(orderService.getAllOrders(PageRequest.of(page, size)));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<OrderDTO> updateStatus(@PathVariable("id") Long id,
+                                               @RequestParam("status") OrderStatus status) {
+        return ResponseEntity.ok(orderService.updateStatus(id, status));
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.EyeCareHubDB.dto.CreatePaymentRequest;
+import com.example.EyeCareHubDB.dto.PaymentDTO;
+import com.example.EyeCareHubDB.dto.VnPayCallbackResponse;
+import com.example.EyeCareHubDB.dto.VnPayCreatePaymentRequest;
+import com.example.EyeCareHubDB.dto.VnPayCreatePaymentResponse;
+import com.example.EyeCareHubDB.entity.Payment.PaymentStatus;
+import com.example.EyeCareHubDB.service.PaymentService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+
+@Tag(name = "Payment")
+@RestController
+@RequestMapping("/api/payments")
+@RequiredArgsConstructor
+public class PaymentController {
+
+    private final PaymentService paymentService;
+
+    @PostMapping("/confirm")
+    public PaymentDTO confirm(@RequestBody Map<String, String> body) {
+        String txnRef = body.get("transactionRef");
+        return paymentService.confirmPayment(txnRef);
+    }
+
+    @PostMapping
+    public ResponseEntity<PaymentDTO> createPayment(@RequestBody CreatePaymentRequest payment) {
+        return ResponseEntity.ok(paymentService.createPayment(payment));
+    }
+
+    @PostMapping("/vnpay/create")
+    public ResponseEntity<VnPayCreatePaymentResponse> createVnPayPayment(@RequestBody VnPayCreatePaymentRequest request,
+            HttpServletRequest httpRequest) {
+        return ResponseEntity.ok(paymentService.createVnPayPayment(request, resolveClientIp(httpRequest)));
+    }
+
+    @io.swagger.v3.oas.annotations.Operation(summary = "VNPay Callback", description = "Endpoint for VNPay to return transaction result. Not intended for manual use.")
+    @GetMapping("/vnpay/callback")
+    public ResponseEntity<VnPayCallbackResponse> vnpayCallback(@RequestParam("params") Map<String, String> params) {
+
+        VnPayCallbackResponse response = paymentService.handleVnPayCallback(params);
+
+        return ResponseEntity.ok(response); // âœ… tráº£ JSON
+    }
+
+    @GetMapping("/order/{orderId}")
+    public ResponseEntity<List<PaymentDTO>> getByOrder(@PathVariable("orderId") Long orderId) {
+        return ResponseEntity.ok(paymentService.getPaymentsByOrder(orderId));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PaymentDTO> getPayment(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(paymentService.getPayment(id));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<PaymentDTO> updateStatus(@PathVariable("id") Long id,
+            @RequestParam("status") PaymentStatus status,
+            @RequestParam(value = "transactionRef", required = false) String transactionRef) {
+        return ResponseEntity.ok(paymentService.updateStatus(id, status, transactionRef));
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        String ip = (forwarded != null && !forwarded.isBlank())
+                ? forwarded.split(",")[0].trim()
+                : request.getRemoteAddr();
+
+        // Convert IPv6 loopback to IPv4 for VNPAY compatibility
+        if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
+            return "127.0.0.1";
+        }
+        return ip;
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+
+import com.example.EyeCareHubDB.dto.PolicyCreateRequest;
+import com.example.EyeCareHubDB.dto.PolicyDTO;
+import com.example.EyeCareHubDB.dto.PolicyPublicResponse;
+import com.example.EyeCareHubDB.dto.PolicyUpdateRequest;
+import com.example.EyeCareHubDB.entity.Policy;
+import com.example.EyeCareHubDB.service.PolicyService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/v1/policies")
+@RequiredArgsConstructor
+@Tag(name = "Policies", description = "Policy Management APIs")
+public class PolicyController {
+    
+    private final PolicyService policyService;
+    
+    @GetMapping
+    public ResponseEntity<Page<PolicyDTO>> getAllPolicies(
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        return ResponseEntity.ok(policyService.getAllPolicies(PageRequest.of(page, size)));
+    }
+    
+    @GetMapping("/published")
+    public ResponseEntity<Page<PolicyDTO>> getPublishedPolicies(
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        return ResponseEntity.ok(policyService.getPublishedPolicies(PageRequest.of(page, size)));
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<PolicyDTO> getPolicyById(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(policyService.getPolicyById(id));
+    }
+    
+    @GetMapping("/type/{type}")
+    public ResponseEntity<PolicyDTO> getPolicyByType(@PathVariable("type") String type) {
+        return ResponseEntity.ok(policyService.getPolicyByType(Policy.PolicyType.valueOf(type)));
+    }
+    
+    @GetMapping("/public/type/{type}")
+    public ResponseEntity<PolicyPublicResponse> getPublishedPolicyByType(@PathVariable("type") String type) {
+        return ResponseEntity.ok(policyService.getPublishedPolicyByType(Policy.PolicyType.valueOf(type)));
+    }
+    
+    
+    @PostMapping
+    public ResponseEntity<PolicyDTO> createPolicy(@RequestBody PolicyCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(policyService.createPolicy(request));
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<PolicyDTO> updatePolicy(
+            @PathVariable("id") Long id,
+            @RequestBody PolicyUpdateRequest request) {
+        return ResponseEntity.ok(policyService.updatePolicy(id, request));
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePolicy(@PathVariable("id") Long id) {
+        policyService.deletePolicy(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.EyeCareHubDB.entity.Prescription;
+import com.example.EyeCareHubDB.service.PrescriptionService;
+
+import lombok.RequiredArgsConstructor;
+
+@Tag(name = "Prescription")
+@RestController
+@RequestMapping("/api/prescriptions")
+@RequiredArgsConstructor
+public class PrescriptionController {
+
+    private final PrescriptionService prescriptionService;
+
+    @PostMapping("/order-item/{orderItemId}")
+    public ResponseEntity<Prescription> create(@PathVariable("orderItemId") Long orderItemId,
+                                                @RequestBody Prescription prescription) {
+        return ResponseEntity.ok(prescriptionService.createPrescription(orderItemId, prescription));
+    }
+
+    @GetMapping("/order-item/{orderItemId}")
+    public ResponseEntity<Prescription> getByOrderItem(@PathVariable("orderItemId") Long orderItemId) {
+        return ResponseEntity.ok(prescriptionService.getPrescriptionByOrderItem(orderItemId));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Prescription> update(@PathVariable("id") Long id,
+                                               @RequestBody Prescription prescription) {
+        return ResponseEntity.ok(prescriptionService.updatePrescription(id, prescription));
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.EyeCareHubDB.dto.ProductCreateRequest;
+import com.example.EyeCareHubDB.dto.ProductDTO;
+import com.example.EyeCareHubDB.dto.ProductDetailResponse;
+import com.example.EyeCareHubDB.dto.ProductUpdateRequest;
+import com.example.EyeCareHubDB.service.ProductService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/v1/products")
+@RequiredArgsConstructor
+@Tag(name = "Products", description = "Product Management APIs")
+public class ProductController {
+    
+    private final ProductService productService;
+    
+    @GetMapping
+    public ResponseEntity<List<ProductDTO>> getAllProducts() {
+        return ResponseEntity.ok(productService.getAllProducts());
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductDTO> getProductById(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(productService.getProductById(id));
+    }
+
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<ProductDetailResponse> getProductDetailById(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(productService.getProductDetailById(id));
+    }
+    
+    @GetMapping("/search-tags/{searchTags}")
+    public ResponseEntity<ProductDTO> getProductBySearchTags(@PathVariable("searchTags") String searchTags) {
+        return ResponseEntity.ok(productService.getProductBySearchTags(searchTags));
+    }
+
+    @GetMapping("/search-tags/{searchTags}/detail")
+    public ResponseEntity<ProductDetailResponse> getProductDetailBySearchTags(@PathVariable("searchTags") String searchTags) {
+        return ResponseEntity.ok(productService.getProductDetailBySearchTags(searchTags));
+    }
+
+    // Backward compatible alias for clients still using /slug/{slug}
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<ProductDTO> getProductBySlug(@PathVariable("slug") String slug) {
+        return ResponseEntity.ok(productService.getProductBySlug(slug));
+    }
+
+    @GetMapping("/slug/{slug}/detail")
+    public ResponseEntity<ProductDetailResponse> getProductDetailBySlug(@PathVariable("slug") String slug) {
+        return ResponseEntity.ok(productService.getProductDetailBySlug(slug));
+    }
+    
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<ProductDTO>> getProductsByCategory(@PathVariable("categoryId") Long categoryId) {
+        return ResponseEntity.ok(productService.getProductsByCategory(categoryId));
+    }
+    
+    @GetMapping("/featured")
+    public ResponseEntity<List<ProductDTO>> getFeaturedProducts(@RequestParam(value = "limit", defaultValue = "10") int limit) {
+        return ResponseEntity.ok(productService.getFeaturedProducts(limit));
+    }
+    
+    @GetMapping("/popular")
+    public ResponseEntity<List<ProductDTO>> getPopularProducts(@RequestParam(value = "limit", defaultValue = "10") int limit) {
+        return ResponseEntity.ok(productService.getPopularProducts(limit));
+    }
+    
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductDTO>> searchProducts(
+            @RequestParam("keyword") String keyword,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "pageSize", defaultValue = "10") int pageSize) {
+        return ResponseEntity.ok(productService.searchProducts(keyword, page, pageSize));
+    }
+    
+    @PostMapping
+    public ResponseEntity<ProductDTO> createProduct(@RequestBody ProductCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(productService.createProduct(request));
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductDTO> updateProduct(
+            @PathVariable("id") Long id,
+            @RequestBody ProductUpdateRequest request) {
+        return ResponseEntity.ok(productService.updateProduct(id, request));
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable("id") Long id) {
+        productService.deleteProduct(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.example.EyeCareHubDB.dto.ProductMediaCreateRequest;
+import com.example.EyeCareHubDB.dto.ProductMediaDTO;
+import com.example.EyeCareHubDB.dto.ProductMediaUpdateRequest;
+import com.example.EyeCareHubDB.service.ProductMediaService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@RestController
+@RequestMapping("/api/v1/media")
+@Tag(name = "Product Media", description = "Product Media Management APIs")
+public class ProductMediaController {
+    
+    private final ProductMediaService mediaService;
+    private final Path uploadPath = Paths.get("uploads");
+    
+    public ProductMediaController(ProductMediaService mediaService) {
+        this.mediaService = mediaService;
+        // Create the upload directory if it doesn't exist
+        try {
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Could not create upload directory!", e);
+        }
+    }
+    
+    @GetMapping("/product/{productId}")
+    public ResponseEntity<List<ProductMediaDTO>> getMediaByProductId(@PathVariable("productId") Long productId) {
+        return ResponseEntity.ok(mediaService.getAllMediaByProductId(productId));
+    }
+
+    @GetMapping("/product/{productId}/all")
+    public ResponseEntity<List<ProductMediaDTO>> getAllMediaByProductId(@PathVariable("productId") Long productId) {
+        return ResponseEntity.ok(mediaService.getAllMediaByProductId(productId));
+    }
+
+    @GetMapping("/variant/{variantId}")
+    public ResponseEntity<List<ProductMediaDTO>> getMediaByVariantId(@PathVariable("variantId") Long variantId) {
+        return ResponseEntity.ok(mediaService.getMediaByVariantId(variantId));
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductMediaDTO> getMediaById(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(mediaService.getMediaById(id));
+    }
+    
+    @PostMapping(value = "/product/{productId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductMediaDTO> addMedia(
+            @PathVariable("productId") Long productId,
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "variantId", required = false) String variantIdStr,
+            @RequestParam(value = "type", required = false, defaultValue = "IMAGE") String type,
+            @RequestParam(value = "displayOrder", required = false, defaultValue = "0") String displayOrderStr) {
+        
+        Long variantId = (variantIdStr != null && !variantIdStr.isEmpty() && !variantIdStr.equals("null")) ? Long.parseLong(variantIdStr) : null;
+        Integer displayOrder = (displayOrderStr != null && !displayOrderStr.isEmpty()) ? Integer.parseInt(displayOrderStr) : 0;
+        
+        String fileDownloadUri = saveUploadedFile(file);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mediaService.addMedia(productId, variantId, fileDownloadUri, type, displayOrder));
+    }
+
+    @PostMapping(value = "/product/{productId}/url", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ProductMediaDTO> addMediaByUrl(
+            @PathVariable("productId") Long productId,
+            @RequestBody ProductMediaCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mediaService.addMediaByUrl(
+                        productId,
+                        request.getVariantId(),
+                        request.getUrl(),
+                        request.getType(),
+                        request.getDisplayOrder()));
+    }
+    
+    @PostMapping(value = "/product/{productId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductMediaDTO> uploadImage(
+            @PathVariable("productId") Long productId,
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "variantId", required = false) String variantIdStr,
+            @RequestParam(value = "type", required = false, defaultValue = "IMAGE") String type,
+            @RequestParam(value = "displayOrder", required = false, defaultValue = "0") String displayOrderStr) {
+        
+        Long variantId = (variantIdStr != null && !variantIdStr.isEmpty() && !variantIdStr.equals("null")) ? Long.parseLong(variantIdStr) : null;
+        Integer displayOrder = (displayOrderStr != null && !displayOrderStr.isEmpty()) ? Integer.parseInt(displayOrderStr) : 0;
+        
+        String fileDownloadUri = saveUploadedFile(file);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(mediaService.addMedia(productId, variantId, fileDownloadUri, type, displayOrder));
+    }
+    
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductMediaDTO> updateMedia(
+            @PathVariable("id") Long id,
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @RequestParam(value = "type", required = false) String type,
+            @RequestParam(value = "displayOrder", required = false) String displayOrderStr) {
+        
+        Integer displayOrder = (displayOrderStr != null && !displayOrderStr.isEmpty()) ? Integer.parseInt(displayOrderStr) : null;
+        String fileDownloadUri = file != null ? saveUploadedFile(file) : null;
+        return ResponseEntity.ok(mediaService.updateMedia(id, fileDownloadUri, type, displayOrder));
+    }
+
+    @PutMapping(value = "/{id}/url", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ProductMediaDTO> updateMediaByUrl(
+            @PathVariable("id") Long id,
+            @RequestBody ProductMediaUpdateRequest request) {
+        return ResponseEntity.ok(
+                mediaService.updateMediaByUrl(id, request.getUrl(), request.getType(), request.getDisplayOrder()));
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMedia(@PathVariable("id") Long id) {
+        mediaService.deleteMedia(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    private String saveUploadedFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("Please select a file to upload");
+        }
+
+        try {
+            byte[] bytes = file.getBytes();
+            String originalFileName = file.getOriginalFilename();
+            String fileExtension = "";
+            if (originalFileName != null && originalFileName.contains(".")) {
+                fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+            }
+
+            String newFileName = UUID.randomUUID() + fileExtension;
+            Path path = uploadPath.resolve(Paths.get(newFileName)).normalize().toAbsolutePath();
+            Files.write(path, bytes);
+
+            return "/uploads/" + newFileName;
+        } catch (IOException e) {
+            throw new RuntimeException("Could not upload the file: " + e.getMessage());
+        }
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.EyeCareHubDB.dto.ProductVariantCreateRequest;
+import com.example.EyeCareHubDB.dto.ProductVariantDTO;
+import com.example.EyeCareHubDB.dto.ProductVariantUpdateRequest;
+import com.example.EyeCareHubDB.dto.VariantStockResponse;
+import com.example.EyeCareHubDB.service.ProductVariantService;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/v1/variants")
+@RequiredArgsConstructor
+@Tag(name = "Product Variants", description = "Product Variant Management APIs")
+public class ProductVariantController {
+    
+    private final ProductVariantService variantService;
+    
+    @GetMapping("/product/{productId}")
+    public ResponseEntity<List<ProductVariantDTO>> getVariantsByProductId(@PathVariable("productId") Long productId) {
+        return ResponseEntity.ok(variantService.getVariantsByProductId(productId));
+    }
+    
+    @GetMapping("/product/{productId}/active")
+    public ResponseEntity<List<ProductVariantDTO>> getActiveVariantsByProductId(@PathVariable("productId") Long productId) {
+        return ResponseEntity.ok(variantService.getActiveVariantsByProductId(productId));
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductVariantDTO> getVariantById(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(variantService.getVariantById(id));
+    }
+    
+    @GetMapping("/sku/{sku}")
+    public ResponseEntity<ProductVariantDTO> getVariantBySku(@PathVariable("sku") String sku) {
+        return ResponseEntity.ok(variantService.getVariantBySku(sku));
+    }
+    
+    @GetMapping("/{id}/stock")
+    public ResponseEntity<VariantStockResponse> getStockStatus(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(variantService.getStockStatus(id));
+    }
+    
+    @GetMapping("/{id}/has-stock")
+    public ResponseEntity<Boolean> hasStock(
+            @PathVariable("id") Long id,
+            @RequestParam("quantity") Integer quantity) {
+        return ResponseEntity.ok(variantService.hasStock(id, quantity));
+    }
+    
+    @PostMapping("/product/{productId}")
+    public ResponseEntity<ProductVariantDTO> createVariant(
+            @PathVariable("productId") Long productId,
+            @RequestBody ProductVariantCreateRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(variantService.createVariant(productId, request));
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductVariantDTO> updateVariant(
+            @PathVariable("id") Long id,
+            @RequestBody ProductVariantUpdateRequest request) {
+        return ResponseEntity.ok(variantService.updateVariant(id, request));
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteVariant(@PathVariable("id") Long id) {
+        variantService.deleteVariant(id);
+        return ResponseEntity.noContent().build();
+    }
+    
+    @PutMapping("/{id}/decrement-stock")
+    public ResponseEntity<Void> decrementStock(
+            @PathVariable("id") Long id,
+            @RequestParam("quantity") Integer quantity) {
+        variantService.decrementStock(id, quantity);
+        return ResponseEntity.ok().build();
+    }
+    
+    @PutMapping("/{id}/increment-stock")
+    public ResponseEntity<Void> incrementStock(
+            @PathVariable("id") Long id,
+            @RequestParam("quantity") Integer quantity) {
+        variantService.incrementStock(id, quantity);
+        return ResponseEntity.ok().build();
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+
+import com.example.EyeCareHubDB.entity.Promotion;
+import com.example.EyeCareHubDB.service.PromotionService;
+
+import lombok.RequiredArgsConstructor;
+
+@Tag(name = "Promotion")
+@RestController
+@RequestMapping("/api/v1/promotions")
+@RequiredArgsConstructor
+public class PromotionController {
+
+    private final PromotionService promotionService;
+
+    @PostMapping
+    public ResponseEntity<Promotion> create(@RequestBody Promotion promotion) {
+        return ResponseEntity.ok(promotionService.createPromotion(promotion));
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<Promotion>> getActive(
+            @RequestParam(value = "page", defaultValue = "0") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size) {
+        return ResponseEntity.ok(promotionService.getAllActivePromotions(PageRequest.of(page, size)));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Promotion> update(@PathVariable("id") Long id, @RequestBody Promotion promotion) {
+        return ResponseEntity.ok(promotionService.updatePromotion(id, promotion));
+    }
+}
+package com.example.EyeCareHubDB.controller;
+
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.EyeCareHubDB.dto.ShipmentDTO;
+import com.example.EyeCareHubDB.entity.Shipment.ShipmentStatus;
+import com.example.EyeCareHubDB.service.ShipmentService;
+
+import lombok.RequiredArgsConstructor;
+
+@Tag(name = "Shipment")
+@RestController
+@RequestMapping("/api/v1/shipments")
+@RequiredArgsConstructor
+public class ShipmentController {
+
+    private final ShipmentService shipmentService;
+
+    @PostMapping("/order/{orderId}")
+    public ResponseEntity<ShipmentDTO> create(@PathVariable("orderId") Long orderId,
+                                           @RequestBody com.example.EyeCareHubDB.dto.CreateShipmentRequest request) {
+        return ResponseEntity.ok(shipmentService.createShipment(orderId, request));
+    }
+
+    @GetMapping("/order/{orderId}")
+    public ResponseEntity<ShipmentDTO> getByOrder(@PathVariable("orderId") Long orderId) {
+        return ResponseEntity.ok(shipmentService.getShipmentByOrder(orderId));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<ShipmentDTO> update(@PathVariable("id") Long id,
+                                           @RequestParam(name = "trackingNumber", required = false) String trackingNumber,
+                                           @RequestParam(name = "trackingUrl", required = false) String trackingUrl,
+                                           @RequestParam(name = "status", required = false) ShipmentStatus status) {
+        return ResponseEntity.ok(shipmentService.updateShipment(id, trackingNumber, trackingUrl, status));
+    }
+
+    @GetMapping
+    public ResponseEntity<org.springframework.data.domain.Page<ShipmentDTO>> getAll(
+            @org.springframework.data.web.PageableDefault(size = 100) org.springframework.data.domain.Pageable pageable) {
+        return ResponseEntity.ok(shipmentService.getAllShipments(pageable));
+    }
+}

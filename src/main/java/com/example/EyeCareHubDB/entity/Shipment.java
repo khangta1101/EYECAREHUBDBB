@@ -15,42 +15,42 @@ public class Shipment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "\"ShipmentId\"")
+    @Column(name = "ShipmentId")
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "\"OrderId\"", nullable = false, unique = true)
+    @JoinColumn(name = "OrderId", nullable = false, unique = true)
     private Order order;
 
-    @Column(name = "\"Carrier\"", length = 100)
+    @Column(name = "Carrier", length = 100)
     private String carrier;
 
-    @Column(name = "\"TrackingNo\"", length = 200)
+    @Column(name = "TrackingNo", length = 200)
     private String trackingNumber;
 
-    @Column(name = "\"TrackingUrl\"", length = 500)
+    @Column(name = "TrackingUrl", length = 500)
     private String trackingUrl;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "\"Status\"", nullable = false, length = 20)
+    @Column(name = "Status", nullable = false, length = 20)
     private ShipmentStatus status = ShipmentStatus.CREATED;
 
-    @Column(name = "\"EstimatedDelivery\"")
+    @Column(name = "EstimatedDelivery")
     private LocalDateTime estimatedDelivery;
 
-    @Column(name = "\"ShippedAt\"")
+    @Column(name = "ShippedAt")
     private LocalDateTime shippedAt;
 
-    @Column(name = "\"DeliveredAt\"")
+    @Column(name = "DeliveredAt")
     private LocalDateTime actualDelivery;
 
-    @Column(name = "\"Note\"", columnDefinition = "TEXT")
+    @Column(name = "Note", columnDefinition = "TEXT")
     private String note;
 
-    @Column(name = "\"CreatedAt\"", nullable = false, updatable = false)
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "\"UpdatedAt\"", nullable = false)
+    @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist

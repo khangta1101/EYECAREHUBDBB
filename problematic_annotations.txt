@@ -1,0 +1,196 @@
+﻿
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\AccountController.j
+ava:39:    public Respo
+nseEntity<AccountDTO> g
+etAccountById(@PathVari
+able Long id) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\AccountController.j
+ava:44:    public Respo
+nseEntity<AccountDTO> g
+etAccountByEmail(@PathV
+ariable String email) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\AccountController.j
+ava:49:    public Respo
+nseEntity<List<AccountD
+TO>> getAccountsByRole(
+@PathVariable String 
+role) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\AccountController.j
+ava:60:            
+@PathVariable Long id,
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\AccountController.j
+ava:66:    public 
+ResponseEntity<Void> de
+leteAccount(@PathVariab
+le Long id) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\AuditLogController.
+java:29:    public Resp
+onseEntity<List<AuditLo
+g>> getByEntity(@Reques
+tParam String 
+entityType,
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\AuditLogController.
+java:30:               
+                       
+                 
+@RequestParam Long 
+entityId) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\AuditLogController.
+java:35:    public Resp
+onseEntity<List<AuditLo
+g>> getByActor(@PathVar
+iable Long accountId) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\CategoryController.
+java:38:    public Resp
+onseEntity<CategoryDTO>
+ getCategoryById(@PathV
+ariable Long id) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\CategoryController.
+java:43:    public Resp
+onseEntity<CategoryDTO>
+ getCategoryBySlug(@Pat
+hVariable String slug) 
+{
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\CategoryController.
+java:53:    public Resp
+onseEntity<List<Categor
+yDTO>> getSubCategories
+(@PathVariable Long 
+parentId) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\CategoryController.
+java:65:            
+@PathVariable Long id,
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\CategoryController.
+java:71:    public 
+ResponseEntity<Void> de
+leteCategory(@PathVaria
+ble Long id) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\CustomerController.
+java:39:    public Resp
+onseEntity<CustomerDTO>
+ getCustomerById(@PathV
+ariable Long id) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\CustomerController.
+java:44:    public Resp
+onseEntity<CustomerDTO>
+ getCustomerByAccountId
+(@PathVariable Long 
+accountId) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\CustomerController.
+java:49:    public Resp
+onseEntity<List<Custome
+rDTO>> searchCustomersB
+yName(@RequestParam 
+String name) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\CustomerController.
+java:61:            
+@PathVariable Long id,
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\CustomerController.
+java:68:            
+@PathVariable Long 
+accountId,
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\CustomerController.
+java:74:    public 
+ResponseEntity<Void> de
+leteCustomer(@PathVaria
+ble Long id) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\PaymentController.j
+ava:55:    public Respo
+nseEntity<VnPayCallback
+Response> vnpayCallback
+(@RequestParam 
+Map<String, String> 
+params) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\PaymentController.j
+ava:63:    public Respo
+nseEntity<List<PaymentD
+TO>> getByOrder(@PathVa
+riable Long orderId) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\PaymentController.j
+ava:68:    public Respo
+nseEntity<PaymentDTO> g
+etPayment(@PathVariable
+ Long id) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\PaymentController.j
+ava:73:    public Respo
+nseEntity<PaymentDTO> u
+pdateStatus(@PathVariab
+le Long id,
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\PaymentController.j
+ava:74:            
+@RequestParam 
+PaymentStatus status,
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\PrescriptionControl
+ler.java:22:    public 
+ResponseEntity<Prescrip
+tion> 
+create(@PathVariable 
+Long orderItemId,
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\PrescriptionControl
+ler.java:28:    public 
+ResponseEntity<Prescrip
+tion> getByOrderItem(@P
+athVariable Long 
+orderItemId) {
+src\main\java\com\examp
+le\EyeCareHubDB\control
+ler\PrescriptionControl
+ler.java:33:    public 
+ResponseEntity<Prescrip
+tion> 
+update(@PathVariable 
+Long id,
+
+

@@ -4,9 +4,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.TreeMap;
@@ -18,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.EyeCareHubDB.config.VnPayProperties;
 import com.example.EyeCareHubDB.entity.Payment;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,9 +29,16 @@ public class VnPayService {
 
     private final VnPayProperties vnPayProperties;
 
+    // ================= CREATE PAYMENT URL =================
     public String buildPaymentUrl(Payment payment, String clientIp, String orderInfo, String customReturnUrl) {
         validateConfig();
-        LocalDateTime now = LocalDateTime.now();
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Asia/Ho_Chi_Minh"));
+
+        String ipAddr = clientIp;
+        if (isBlank(ipAddr) || "127.0.0.1".equals(ipAddr) || "::1".equals(ipAddr)) {
+            ipAddr = "210.245.8.19";
+        }
 
         Map<String, String> params = new TreeMap<>();
         params.put("vnp_Version", vnPayProperties.getVersion());
@@ -43,102 +50,176 @@ public class VnPayService {
         params.put("vnp_OrderInfo", defaultIfBlank(orderInfo, "Thanh toan don hang " + payment.getId()));
         params.put("vnp_OrderType", vnPayProperties.getOrderType());
         params.put("vnp_Locale", vnPayProperties.getLocale());
-        params.put("vnp_ReturnUrl", defaultIfBlank(customReturnUrl, vnPayProperties.getReturnUrl()));
-        params.put("vnp_IpAddr", defaultIfBlank(clientIp, "127.0.0.1"));
+        params.put("vnp_BankCode", "NCB");
+
+        // ⚠️ luôn dùng config để tránh lệch hash
+        params.put("vnp_ReturnUrl", vnPayProperties.getReturnUrl());
+
+        params.put("vnp_IpAddr", ipAddr);
         params.put("vnp_CreateDate", now.format(VNPAY_TIME_FORMAT));
         params.put("vnp_ExpireDate", now.plusMinutes(15).format(VNPAY_TIME_FORMAT));
 
-        String query = buildQueryString(params);
-        String secureHash = hmacSha512(vnPayProperties.getHashSecret(), query);
-        return vnPayProperties.getPayUrl() + "?" + query + "&vnp_SecureHash=" + secureHash;
+        String hashData = buildHashData(params);
+        String query = buildQuery(params);
+
+        String secureHash = hmacSha512(vnPayProperties.getHashSecret(), hashData);
+
+        return vnPayProperties.getPayUrl()
+                + "?" + query
+                + "&vnp_SecureHashType=SHA512"
+                + "&vnp_SecureHash=" + secureHash;
     }
 
-    public boolean validateSignature(Map<String, String> queryParams) {
-        validateConfig();
-        String secureHash = queryParams.get("vnp_SecureHash");
-        if (isBlank(secureHash)) {
+    // ================= HASH DATA =================
+    private String buildHashData(Map<String, String> params) {
+        StringBuilder sb = new StringBuilder();
+
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            if (isBlank(entry.getValue()))
+                continue;
+
+            if (sb.length() > 0)
+                sb.append('&');
+
+            sb.append(entry.getKey());
+            sb.append('=');
+            sb.append(encode(entry.getValue())); // ✅ QUAN TRỌNG
+        }
+
+        return sb.toString();
+    }
+
+    // ================= QUERY =================
+    private String buildQuery(Map<String, String> params) {
+        StringBuilder sb = new StringBuilder();
+
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            if (isBlank(entry.getValue()))
+                continue;
+
+            if (sb.length() > 0)
+                sb.append('&');
+
+            sb.append(entry.getKey());
+            sb.append('=');
+            sb.append(encode(entry.getValue()));
+        }
+
+        return sb.toString();
+    }
+
+    // ================= VALIDATE SIGNATURE =================
+    public boolean validateSignature(Map<String, String> params) {
+        try {
+            String vnpSecureHash = params.get("vnp_SecureHash");
+
+            if (vnpSecureHash == null || vnpSecureHash.isEmpty()) {
+                return false;
+            }
+
+            // ✅ Bỏ hash ra khỏi params
+            Map<String, String> filtered = new HashMap<>(params);
+            filtered.remove("vnp_SecureHash");
+            filtered.remove("vnp_SecureHashType");
+
+            // ✅ Sort key
+            List<String> fieldNames = new ArrayList<>(filtered.keySet());
+            Collections.sort(fieldNames);
+
+            StringBuilder hashData = new StringBuilder();
+
+            for (String fieldName : fieldNames) {
+                String value = filtered.get(fieldName);
+
+                if (value != null && !value.isEmpty()) {
+                    hashData.append(fieldName);
+                    hashData.append("=");
+                    hashData.append(value);
+                    hashData.append("&");
+                }
+            }
+
+            // Xóa dấu & cuối
+            hashData.deleteCharAt(hashData.length() - 1);
+
+            String calculatedHash = hmacSHA512(secretKey, hashData.toString());
+
+            // 🔥 DEBUG
+            System.out.println("====== DEBUG VNPAY ======");
+            System.out.println("HASH DATA: " + hashData);
+            System.out.println("CALC HASH: " + calculatedHash);
+            System.out.println("VNP HASH: " + vnpSecureHash);
+
+            return calculatedHash.equalsIgnoreCase(vnpSecureHash);
+
+        } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
+    }
 
-        Map<String, String> signedParams = new TreeMap<>();
-        for (Map.Entry<String, String> entry : queryParams.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-            if (key == null || !key.startsWith("vnp_") || isBlank(value)) {
-                continue;
-            }
-            if ("vnp_SecureHash".equals(key) || "vnp_SecureHashType".equals(key)) {
-                continue;
-            }
-            signedParams.put(key, value);
+    // ================= SERIALIZE =================
+    public String serializeResponse(Map<String, String> params) {
+        try {
+            return new ObjectMapper().writeValueAsString(params);
+        } catch (Exception e) {
+            return "{}";
         }
-
-        String rawData = buildQueryString(signedParams);
-        String calculatedHash = hmacSha512(vnPayProperties.getHashSecret(), rawData);
-        return calculatedHash.equalsIgnoreCase(secureHash);
     }
 
-    public String serializeResponse(Map<String, String> queryParams) {
-        return new TreeMap<>(queryParams).toString();
-    }
+    // ================= ENCODE =================
+    private String encode(String value) {
+        try {
+            String encoded = URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
 
-    private String toVnPayAmount(BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Amount must be greater than 0 for VNPay payment");
+            return encoded.replace("+", "%20");
+
+        } catch (Exception e) {
+            return value;
         }
-        return amount.multiply(BigDecimal.valueOf(100))
-            .setScale(0, RoundingMode.HALF_UP)
-            .toPlainString();
     }
 
-    private String buildQueryString(Map<String, String> params) {
-        StringBuilder builder = new StringBuilder();
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            if (isBlank(entry.getValue())) {
-                continue;
-            }
-            if (builder.length() > 0) {
-                builder.append('&');
-            }
-            builder.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
-            builder.append('=');
-            builder.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
-        }
-        return builder.toString();
-    }
-
+    // ================= HASH =================
     private String hmacSha512(String key, String data) {
         try {
             Mac hmac = Mac.getInstance("HmacSHA512");
-            SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
-            hmac.init(keySpec);
+            SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA512");
+            hmac.init(secretKey);
+
             byte[] hashBytes = hmac.doFinal(data.getBytes(StandardCharsets.UTF_8));
 
-            StringBuilder hex = new StringBuilder();
+            StringBuilder result = new StringBuilder();
             for (byte b : hashBytes) {
-                String part = Integer.toHexString(0xff & b);
-                if (part.length() == 1) {
-                    hex.append('0');
-                }
-                hex.append(part);
+                result.append(String.format("%02x", b));
             }
-            return hex.toString();
-        } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
-            throw new RuntimeException("Cannot sign VNPay request", ex);
+
+            return result.toString().toUpperCase();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Hash error", e);
         }
     }
 
+    private String toVnPayAmount(BigDecimal amount) {
+        return amount.multiply(BigDecimal.valueOf(100))
+                .setScale(0, RoundingMode.HALF_UP)
+                .toPlainString();
+    }
+
     private void validateConfig() {
-        if (isBlank(vnPayProperties.getTmnCode()) || isBlank(vnPayProperties.getHashSecret()) || isBlank(vnPayProperties.getReturnUrl())) {
-            throw new RuntimeException("VNPay configuration is missing. Check vnpay.tmn-code, vnpay.hash-secret and vnpay.return-url");
-        }
+        if (isBlank(vnPayProperties.getTmnCode()))
+            throw new RuntimeException("Missing tmnCode");
+        if (isBlank(vnPayProperties.getHashSecret()))
+            throw new RuntimeException("Missing hashSecret");
+        if (isBlank(vnPayProperties.getReturnUrl()))
+            throw new RuntimeException("Missing returnUrl");
     }
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
 
-    private String defaultIfBlank(String value, String defaultValue) {
-        return isBlank(value) ? defaultValue : value;
+    private String defaultIfBlank(String value, String def) {
+        return isBlank(value) ? def : value;
     }
 }

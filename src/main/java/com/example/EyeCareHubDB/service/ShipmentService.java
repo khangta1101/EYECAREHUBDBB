@@ -22,11 +22,20 @@ public class ShipmentService {
     private final OrderRepository orderRepository;
 
     @Transactional
-    public ShipmentDTO createShipment(Long orderId, Shipment shipment) {
+    public ShipmentDTO createShipment(Long orderId, com.example.EyeCareHubDB.dto.CreateShipmentRequest request) {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
-        shipment.setOrder(order);
-        shipment.setStatus(ShipmentStatus.CREATED);
+        
+        Shipment shipment = Shipment.builder()
+            .order(order)
+            .carrier(request.getCarrier())
+            .trackingNumber(request.getTrackingNumber())
+            .trackingUrl(request.getTrackingUrl())
+            .estimatedDelivery(request.getEstimatedDelivery())
+            .note(request.getNote())
+            .status(ShipmentStatus.CREATED)
+            .build();
+            
         return toDTO(shipmentRepository.save(shipment));
     }
 

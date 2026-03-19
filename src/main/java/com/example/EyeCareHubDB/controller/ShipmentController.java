@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.EyeCareHubDB.dto.ShipmentDTO;
-import com.example.EyeCareHubDB.entity.Shipment;
 import com.example.EyeCareHubDB.entity.Shipment.ShipmentStatus;
 import com.example.EyeCareHubDB.service.ShipmentService;
 
@@ -23,8 +22,8 @@ public class ShipmentController {
 
     @PostMapping("/order/{orderId}")
     public ResponseEntity<ShipmentDTO> create(@PathVariable("orderId") Long orderId,
-                                           @RequestBody Shipment shipment) {
-        return ResponseEntity.ok(shipmentService.createShipment(orderId, shipment));
+                                           @RequestBody com.example.EyeCareHubDB.dto.CreateShipmentRequest request) {
+        return ResponseEntity.ok(shipmentService.createShipment(orderId, request));
     }
 
     @GetMapping("/order/{orderId}")
@@ -34,9 +33,9 @@ public class ShipmentController {
 
     @PatchMapping("/{id}")
     public ResponseEntity<ShipmentDTO> update(@PathVariable("id") Long id,
-                                           @RequestParam(value = "trackingNumber", required = false) String trackingNumber,
-                                           @RequestParam(value = "trackingUrl", required = false) String trackingUrl,
-                                           @RequestParam(value = "status", required = false) ShipmentStatus status) {
+                                           @RequestParam(name = "trackingNumber", required = false) String trackingNumber,
+                                           @RequestParam(name = "trackingUrl", required = false) String trackingUrl,
+                                           @RequestParam(name = "status", required = false) ShipmentStatus status) {
         return ResponseEntity.ok(shipmentService.updateShipment(id, trackingNumber, trackingUrl, status));
     }
 

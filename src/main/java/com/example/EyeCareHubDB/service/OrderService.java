@@ -65,8 +65,12 @@ public class OrderService {
 
 
     @Transactional
-    public OrderDTO checkout(Long customerId, Long addressId, OrderType orderType,
-                          String promotionCode, BigDecimal shippingFee) {
+    public OrderDTO checkout(com.example.EyeCareHubDB.dto.CheckoutRequest request) {
+        Long customerId = request.getCustomerId();
+        Long addressId = request.getAddressId();
+        OrderType orderType = request.getOrderType();
+        String promotionCode = request.getPromotionCode();
+
         Customer customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
 
@@ -84,6 +88,7 @@ public class OrderService {
 
         BigDecimal discountTotal = BigDecimal.ZERO;
         Promotion promotion = null;
+        BigDecimal shippingFee = new BigDecimal("30000.00");
 
         if (promotionCode != null && !promotionCode.isBlank()) {
             promotion = promotionService.validateCode(promotionCode, subtotal).orElse(null);
@@ -103,8 +108,9 @@ public class OrderService {
             .promotion(promotion)
             .subtotal(subtotal)
             .discountTotal(discountTotal)
-            .shippingFee(shippingFee != null ? shippingFee : BigDecimal.ZERO)
+            .shippingFee(shippingFee)
             .grandTotal(grandTotal)
+            .note(request.getNote())
             .build();
 
         // Copy cart items -> order items + reserve stock
@@ -150,12 +156,14 @@ public class OrderService {
         return toDTO(orderRepository.save(order));
     }
 
+    @Transactional(readOnly = true)
     public OrderDTO getOrder(Long id) {
         return orderRepository.findById(id)
             .map(this::toDTO)
             .orElseThrow(() -> new RuntimeException("Order not found: " + id));
     }
 
+    @Transactional(readOnly = true)
     public Page<OrderDTO> getOrdersByCustomer(Long customerId, Pageable pageable) {
         Customer customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
@@ -163,6 +171,7 @@ public class OrderService {
             .map(this::toDTO);
     }
 
+    @Transactional(readOnly = true)
     public Page<OrderDTO> getAllOrders(Pageable pageable) {
         return orderRepository.findAll(pageable)
             .map(this::toDTO);
@@ -240,6 +249,15 @@ public class OrderService {
 
     private PromotionDTO toPromotionDTO(Promotion promotion) {
         if (promotion == null) return null;
+        String display = "";
+        if (promotion.getDiscountType() == Promotion.DiscountType.PERCENTAGE) {
+            display = "Giảm " + promotion.getDiscountValue().stripTrailingZeros().toPlainString() + "%";
+        } else if (promotion.getDiscountType() == Promotion.DiscountType.FIXED_AMOUNT) {
+            display = "Giảm " + promotion.getDiscountValue().stripTrailingZeros().toPlainString() + "đ";
+        } else if (promotion.getDiscountType() == Promotion.DiscountType.FREE_SHIPPING) {
+            display = "Miễn phí vận chuyển";
+        }
+
         return PromotionDTO.builder()
             .id(promotion.getId())
             .code(promotion.getCode())
@@ -253,6 +271,7 @@ public class OrderService {
             .endAt(promotion.getEndAt())
             .ruleJson(promotion.getRuleJson())
             .isActive(promotion.getIsActive())
+            .discountDisplay(display)
             .createdAt(promotion.getCreatedAt())
             .build();
     }

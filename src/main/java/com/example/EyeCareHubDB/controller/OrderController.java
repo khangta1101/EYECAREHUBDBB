@@ -1,12 +1,10 @@
 package com.example.EyeCareHubDB.controller;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.math.BigDecimal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.example.EyeCareHubDB.dto.*;
 import com.example.EyeCareHubDB.entity.Order.OrderStatus;
-import com.example.EyeCareHubDB.entity.Order.OrderType;
 import com.example.EyeCareHubDB.service.OrderService;
 
 import org.springframework.data.domain.Page;
@@ -22,12 +20,8 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping("/checkout")
-    public ResponseEntity<OrderDTO> checkout(@RequestParam("customerId") Long customerId,
-                                           @RequestParam(value = "addressId", required = false) Long addressId,
-                                           @RequestParam("orderType") OrderType orderType,
-                                           @RequestParam(value = "promotionCode", required = false) String promotionCode,
-                                           @RequestParam(value = "shippingFee", defaultValue = "0") BigDecimal shippingFee) {
-        return ResponseEntity.ok(orderService.checkout(customerId, addressId, orderType, promotionCode, shippingFee));
+    public ResponseEntity<OrderDTO> checkout(@RequestBody CheckoutRequest request) {
+        return ResponseEntity.ok(orderService.checkout(request));
     }
 
     @GetMapping("/{id}")

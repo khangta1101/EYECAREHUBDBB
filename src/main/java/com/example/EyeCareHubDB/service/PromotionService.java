@@ -30,8 +30,11 @@ public class PromotionService {
     }
 
     public Optional<Promotion> validateCode(String code, BigDecimal orderSubtotal) {
-        Promotion promo = promotionRepository.findByCodeAndIsActiveTrue(code)
-            .orElseThrow(() -> new RuntimeException("Promotion code not found or inactive: " + code));
+        Optional<Promotion> promoOpt = promotionRepository.findByCodeAndIsActiveTrue(code);
+        if (promoOpt.isEmpty()) {
+            return Optional.empty();
+        }
+        Promotion promo = promoOpt.get();
 
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(promo.getStartAt()) || now.isAfter(promo.getEndAt())) {
