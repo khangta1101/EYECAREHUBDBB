@@ -7,8 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -50,7 +49,7 @@ public class VnPayService {
         params.put("vnp_OrderInfo", defaultIfBlank(orderInfo, "Thanh toan don hang " + payment.getId()));
         params.put("vnp_OrderType", vnPayProperties.getOrderType());
         params.put("vnp_Locale", vnPayProperties.getLocale());
-        params.put("vnp_BankCode", "NCB");
+        // params.put("vnp_BankCode", "NCB"); // Removed to match verified reference
 
         // ⚠️ luôn dùng config để tránh lệch hash
         params.put("vnp_ReturnUrl", vnPayProperties.getReturnUrl());
@@ -63,6 +62,10 @@ public class VnPayService {
         String query = buildQuery(params);
 
         String secureHash = hmacSha512(vnPayProperties.getHashSecret(), hashData);
+        
+        System.out.println("====== VNPAY REQUEST DEBUG ======");
+        System.out.println("HASH DATA: " + hashData);
+        System.out.println("SECURE HASH: " + secureHash);
 
         return vnPayProperties.getPayUrl()
                 + "?" + query
@@ -140,9 +143,11 @@ public class VnPayService {
             }
 
             // Xóa dấu & cuối
-            hashData.deleteCharAt(hashData.length() - 1);
+            if (hashData.length() > 0) {
+                hashData.deleteCharAt(hashData.length() - 1);
+            }
 
-            String calculatedHash = hmacSHA512(secretKey, hashData.toString());
+            String calculatedHash = hmacSha512(vnPayProperties.getHashSecret(), hashData.toString());
 
             // 🔥 DEBUG
             System.out.println("====== DEBUG VNPAY ======");
@@ -190,7 +195,7 @@ public class VnPayService {
 
             StringBuilder result = new StringBuilder();
             for (byte b : hashBytes) {
-                result.append(String.format("%02x", b));
+                result.append(String.format("%02x", b & 0xff));
             }
 
             return result.toString().toUpperCase();
