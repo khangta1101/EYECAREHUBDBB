@@ -6,6 +6,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+import java.time.LocalDateTime;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,4 +19,16 @@ public class CheckoutRequest {
     private OrderType orderType;
     private String promotionCode;
     private String note;
+    private List<CheckoutItemRequest> items;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class CheckoutItemRequest {
+        private Long cartItemId;
+        private PrescriptionDTO prescription;
+        private LocalDateTime preorderExpectedAt;
+        private String itemNote;
+    }
 }

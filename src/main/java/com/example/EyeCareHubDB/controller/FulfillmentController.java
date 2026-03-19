@@ -44,4 +44,11 @@ public class FulfillmentController {
                                                              @RequestParam(value = "status", defaultValue = "PENDING") TaskStatus status) {
         return ResponseEntity.ok(fulfillmentService.getMyTasks(accountId, status));
     }
+
+    @PostMapping("/stock-arrival/{variantId}")
+    public ResponseEntity<Void> processStockArrival(@PathVariable("variantId") Long variantId,
+                                                   @RequestParam("qty") int qty) {
+        fulfillmentService.processStockArrival(variantId, qty);
+        return ResponseEntity.ok().build();
+    }
 }

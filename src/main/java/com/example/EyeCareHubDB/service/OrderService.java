@@ -36,6 +36,7 @@ import com.example.EyeCareHubDB.entity.Promotion;
 import com.example.EyeCareHubDB.repository.AddressRepository;
 import com.example.EyeCareHubDB.repository.CustomerRepository;
 import com.example.EyeCareHubDB.repository.OrderRepository;
+import com.example.EyeCareHubDB.service.FulfillmentService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -49,6 +50,7 @@ public class OrderService {
     private final CartService cartService;
     private final PromotionService promotionService;
     private final InventoryService inventoryService;
+    private final FulfillmentService fulfillmentService;
 
     // Valid status transitions
     private static final Map<OrderStatus, EnumSet<OrderStatus>> VALID_TRANSITIONS;
@@ -114,19 +116,51 @@ public class OrderService {
             .build();
 
         // Copy cart items -> order items + reserve stock
+        Map<Long, com.example.EyeCareHubDB.dto.CheckoutRequest.CheckoutItemRequest> detailMap = new HashMap<>();
+        if (request.getItems() != null) {
+            for (com.example.EyeCareHubDB.dto.CheckoutRequest.CheckoutItemRequest detail : request.getItems()) {
+                detailMap.put(detail.getCartItemId(), detail);
+            }
+        }
+
         for (CartItem item : items) {
+            com.example.EyeCareHubDB.dto.CheckoutRequest.CheckoutItemRequest detail = detailMap.get(item.getId());
+
             OrderItem oi = OrderItem.builder()
                 .order(order)
                 .variant(item.getVariant())
                 .qty(item.getQty())
                 .unitPrice(item.getUnitPriceSnap())
                 .lineTotal(item.getUnitPriceSnap().multiply(BigDecimal.valueOf(item.getQty())))
-                .isPrescription(orderType == OrderType.PRESCRIPTION)
+                .isPrescription(orderType == OrderType.PRESCRIPTION || (detail != null && detail.getPrescription() != null))
+                .itemNote(detail != null ? detail.getItemNote() : null)
+                .preorderExpectedAt(detail != null ? detail.getPreorderExpectedAt() : null)
                 .build();
             order.getItems().add(oi);
 
             if (orderType == OrderType.IN_STOCK) {
                 inventoryService.reserveStock(item.getVariant().getId(), item.getQty());
+            }
+
+            // Handle prescription if present
+            if (detail != null && detail.getPrescription() != null) {
+                Prescription p = Prescription.builder()
+                    .sphereOD(detail.getPrescription().getSphereOD())
+                    .cylOD(detail.getPrescription().getCylOD())
+                    .axisOD(detail.getPrescription().getAxisOD())
+                    .addOD(detail.getPrescription().getAddOD())
+                    .sphereOS(detail.getPrescription().getSphereOS())
+                    .cylOS(detail.getPrescription().getCylOS())
+                    .axisOS(detail.getPrescription().getAxisOS())
+                    .addOS(detail.getPrescription().getAddOS())
+                    .pdTotal(detail.getPrescription().getPdTotal())
+                    .pdLeft(detail.getPrescription().getPdLeft())
+                    .pdRight(detail.getPrescription().getPdRight())
+                    .prescriptionFileUrl(detail.getPrescription().getPrescriptionFileUrl())
+                    .notes(detail.getPrescription().getNotes())
+                    .orderItem(oi)
+                    .build();
+                oi.setPrescription(p);
             }
         }
 
@@ -151,6 +185,9 @@ public class OrderService {
         if (newStatus == OrderStatus.COMPLETED) {
             order.getItems().forEach(i ->
                 inventoryService.confirmStock(i.getVariant().getId(), i.getQty()));
+        }
+        if (newStatus == OrderStatus.CONFIRMED && current == OrderStatus.NEW) {
+            fulfillmentService.generateTasksForOrder(orderId);
         }
         order.setStatus(newStatus);
         return toDTO(orderRepository.save(order));

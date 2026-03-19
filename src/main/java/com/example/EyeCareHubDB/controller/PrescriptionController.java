@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.example.EyeCareHubDB.entity.Prescription;
 import com.example.EyeCareHubDB.service.PrescriptionService;
+import com.example.EyeCareHubDB.service.FileService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -17,6 +18,16 @@ import lombok.RequiredArgsConstructor;
 public class PrescriptionController {
 
     private final PrescriptionService prescriptionService;
+    private final FileService fileService;
+
+    @PostMapping("/{id}/upload")
+    public ResponseEntity<Prescription> uploadFile(@PathVariable("id") Long id,
+                                                   @RequestPart("file") org.springframework.web.multipart.MultipartFile file) {
+        String url = fileService.saveFile(file, "prescriptions");
+        Prescription existing = prescriptionService.getPrescriptionById(id);
+        existing.setPrescriptionFileUrl(url);
+        return ResponseEntity.ok(prescriptionService.updatePrescription(id, existing));
+    }
 
     @PostMapping("/order-item/{orderItemId}")
     public ResponseEntity<Prescription> create(@PathVariable("orderItemId") Long orderItemId,

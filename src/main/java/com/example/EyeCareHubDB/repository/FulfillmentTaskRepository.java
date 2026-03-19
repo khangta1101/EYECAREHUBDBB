@@ -13,4 +13,5 @@ public interface FulfillmentTaskRepository extends JpaRepository<FulfillmentTask
     List<FulfillmentTask> findByOrderIdOrderByCreatedAtAsc(Long orderId);
     List<FulfillmentTask> findByAssignedToIdAndStatus(Long accountId, TaskStatus status);
     List<FulfillmentTask> findByStatus(TaskStatus status);
+    List<FulfillmentTask> findByTaskTypeAndStatus(FulfillmentTask.TaskType type, TaskStatus status);
 }

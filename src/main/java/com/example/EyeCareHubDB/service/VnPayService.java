@@ -43,15 +43,13 @@ public class VnPayService {
         Map<String, String> params = new TreeMap<>();
         params.put("vnp_Version", vnPayProperties.getVersion());
         params.put("vnp_Command", vnPayProperties.getCommand());
-        params.put("vnp_TmnCode", vnPayProperties.getTmnCode());
+        params.put("vnp_TmnCode", vnPayProperties.getTmnCode().trim());
         params.put("vnp_Amount", toVnPayAmount(payment.getAmount()));
         params.put("vnp_CurrCode", "VND");
         params.put("vnp_TxnRef", payment.getTransactionRef());
         params.put("vnp_OrderInfo", defaultIfBlank(orderInfo, "Thanh toan don hang " + payment.getId()));
         params.put("vnp_OrderType", vnPayProperties.getOrderType());
         params.put("vnp_Locale", vnPayProperties.getLocale());
-        // vnp_BankCode is optional. If removed, VNPAY will show bank selection page.
-        // params.put("vnp_BankCode", "NCB");
 
         String vnpReturnUrl = isBlank(customReturnUrl) ? vnPayProperties.getReturnUrl() : customReturnUrl;
         params.put("vnp_ReturnUrl", vnpReturnUrl);
@@ -59,9 +57,9 @@ public class VnPayService {
         params.put("vnp_CreateDate", now.format(VNPAY_TIME_FORMAT));
         params.put("vnp_ExpireDate", now.plusMinutes(15).format(VNPAY_TIME_FORMAT));
 
-        // BUILD HASH (Note: Standard 2.1.0 practice often EXCLUDES SecureHashType from hash data)
+        // BUILD HASH (vnp_SecureHashType is EXCLUDED from hash data in many 2.1.0 setups)
         String hashData = buildHashData(params);
-        String secureHash = hmacSha512(vnPayProperties.getHashSecret(), hashData);
+        String secureHash = hmacSha512(vnPayProperties.getHashSecret().trim(), hashData);
         
         System.out.println("====== VNPAY REQUEST DEBUG ======");
         System.out.println("HASH DATA STRING: [" + hashData + "]");
@@ -69,7 +67,8 @@ public class VnPayService {
 
         // BUILD URL (Include SecureHashType in URL only)
         String query = buildQuery(params);
-        String finalUrl = vnPayProperties.getPayUrl() + "?" + query + "&vnp_SecureHashType=SHA512&vnp_SecureHash=" + secureHash;
+        String finalUrl = vnPayProperties.getPayUrl() + "?" + query + 
+                         "&vnp_SecureHashType=SHA512&vnp_SecureHash=" + secureHash;
         
         System.out.println("FINAL VNPAY URL: [" + finalUrl + "]");
         return finalUrl;
@@ -209,8 +208,25 @@ public class VnPayService {
     // ================= ENCODE =================
     private String encode(String value) {
         try {
+            // Standard encoder gives + for spaces and lowercase hex (e.g. %2f)
             String encoded = URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
-            return encoded.replace("+", "%20");
+            
+            // Uppercase hex codes (e.g. %2f -> %2F) and replace + with %20
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < encoded.length(); i++) {
+                char c = encoded.charAt(i);
+                if (c == '%' && i + 2 < encoded.length()) {
+                    sb.append(c);
+                    sb.append(Character.toUpperCase(encoded.charAt(i + 1)));
+                    sb.append(Character.toUpperCase(encoded.charAt(i + 2)));
+                    i += 2;
+                } else if (c == '+') {
+                    sb.append("%20");
+                } else {
+                    sb.append(c);
+                }
+            }
+            return sb.toString();
         } catch (Exception e) {
             return value;
         }

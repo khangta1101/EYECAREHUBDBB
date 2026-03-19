@@ -49,12 +49,8 @@ public class AddressService {
                 .recipientName(request.getRecipientName())
                 .phoneNumber(request.getPhoneNumber())
                 .addressLine1(request.getAddressLine1())
-                .addressLine2(request.getAddressLine2())
-                .ward(request.getWard())
-                .district(request.getDistrict())
                 .province(request.getProvince())
-                .postalCode(request.getPostalCode())
-                .country(request.getCountry() != null ? request.getCountry() : "Vietnam")
+                .country("Vietnam")
                 .isDefaultShip(request.getIsDefaultShip() != null ? request.getIsDefaultShip() : false)
                 .isDefaultBill(request.getIsDefaultBill() != null ? request.getIsDefaultBill() : false)
                 .build();
@@ -76,23 +72,8 @@ public class AddressService {
         if (request.getAddressLine1() != null) {
             address.setAddressLine1(request.getAddressLine1());
         }
-        if (request.getAddressLine2() != null) {
-            address.setAddressLine2(request.getAddressLine2());
-        }
-        if (request.getWard() != null) {
-            address.setWard(request.getWard());
-        }
-        if (request.getDistrict() != null) {
-            address.setDistrict(request.getDistrict());
-        }
         if (request.getProvince() != null) {
             address.setProvince(request.getProvince());
-        }
-        if (request.getPostalCode() != null) {
-            address.setPostalCode(request.getPostalCode());
-        }
-        if (request.getCountry() != null) {
-            address.setCountry(request.getCountry());
         }
         if (request.getIsDefaultShip() != null) {
             address.setIsDefaultShip(request.getIsDefaultShip());

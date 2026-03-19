@@ -12,7 +12,6 @@ import com.example.EyeCareHubDB.entity.FulfillmentTask;
 import com.example.EyeCareHubDB.entity.FulfillmentTask.TaskStatus;
 import com.example.EyeCareHubDB.entity.FulfillmentTask.TaskType;
 import com.example.EyeCareHubDB.entity.Order;
-import com.example.EyeCareHubDB.entity.Order.OrderType;
 import com.example.EyeCareHubDB.repository.FulfillmentTaskRepository;
 import com.example.EyeCareHubDB.repository.OrderRepository;
 
@@ -30,19 +29,31 @@ public class FulfillmentService {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
 
-        List<TaskType> taskTypes;
-        if (order.getOrderType() == OrderType.PREORDER) {
-            taskTypes = List.of(TaskType.RECEIVE_PREORDER, TaskType.QC, TaskType.PACK, TaskType.SHIP);
-        } else if (order.getOrderType() == OrderType.PRESCRIPTION) {
-            taskTypes = List.of(TaskType.CUT_LENS, TaskType.ASSEMBLE, TaskType.QC, TaskType.PACK, TaskType.SHIP);
-        } else {
-            taskTypes = List.of(TaskType.PACK, TaskType.SHIP);
+        for (com.example.EyeCareHubDB.entity.OrderItem item : order.getItems()) {
+            if (Boolean.TRUE.equals(item.getIsPrescription())) {
+                // Task for prescription assembly
+                createTask(order, item, TaskType.CUT_LENS);
+                createTask(order, item, TaskType.ASSEMBLE);
+                createTask(order, item, TaskType.QC);
+            } else if (item.getPreorderExpectedAt() != null) {
+                // Task for pre-order receiving
+                createTask(order, item, TaskType.RECEIVE_PREORDER);
+                createTask(order, item, TaskType.QC);
+            }
         }
 
-        for (TaskType type : taskTypes) {
-            taskRepository.save(FulfillmentTask.builder()
-                .order(order).taskType(type).status(TaskStatus.PENDING).build());
-        }
+        // Generic tasks for the whole order
+        createTask(order, null, TaskType.PACK);
+        createTask(order, null, TaskType.SHIP);
+    }
+
+    private void createTask(Order order, com.example.EyeCareHubDB.entity.OrderItem item, TaskType type) {
+        taskRepository.save(FulfillmentTask.builder()
+            .order(order)
+            .orderItem(item)
+            .taskType(type)
+            .status(TaskStatus.PENDING)
+            .build());
     }
 
     @Transactional
@@ -60,6 +71,27 @@ public class FulfillmentService {
             task.setAssignedTo(Account.builder().id(assignedToId).build());
         }
         return toDTO(taskRepository.save(task));
+    }
+
+    @Transactional
+    public void processStockArrival(Long variantId, int qtyReceived) {
+        // Find all pending RECEIVE_PREORDER tasks for this variant
+        List<FulfillmentTask> tasks = taskRepository.findByTaskTypeAndStatus(TaskType.RECEIVE_PREORDER, TaskStatus.PENDING).stream()
+            .filter(t -> t.getOrderItem() != null && t.getOrderItem().getVariant().getId().equals(variantId))
+            .toList();
+
+        int remainingQty = qtyReceived;
+        for (FulfillmentTask t : tasks) {
+            if (remainingQty <= 0) break;
+            int orderQty = t.getOrderItem().getQty();
+            if (remainingQty >= orderQty) {
+                t.setStatus(TaskStatus.DONE);
+                t.setDoneAt(LocalDateTime.now());
+                t.setNote("Stock arrived, qty recognized: " + orderQty);
+                taskRepository.save(t);
+                remainingQty -= orderQty;
+            }
+        }
     }
 
     @Transactional(readOnly = true)

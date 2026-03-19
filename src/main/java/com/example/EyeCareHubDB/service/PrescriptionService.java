@@ -58,6 +58,11 @@ public class PrescriptionService {
             .orElseThrow(() -> new RuntimeException("Prescription not found for order item: " + orderItemId));
     }
 
+    public Prescription getPrescriptionById(Long id) {
+        return prescriptionRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Prescription not found: " + id));
+    }
+
     @Transactional
     public Prescription updatePrescription(Long id, Prescription updated) {
         Prescription existing = prescriptionRepository.findById(id)
