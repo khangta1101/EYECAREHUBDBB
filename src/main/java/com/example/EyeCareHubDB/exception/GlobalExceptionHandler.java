@@ -25,10 +25,18 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
-        ex.printStackTrace(); // Log stack trace to console for debugging
-        HttpStatus status = ex.getMessage() != null && ex.getMessage().startsWith("Email already registered")
-                ? HttpStatus.CONFLICT
-                : HttpStatus.BAD_REQUEST;
+        ex.printStackTrace();
+        
+        String message = ex.getMessage();
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        if (message != null) {
+            if (message.startsWith("Email already registered")) {
+                status = HttpStatus.CONFLICT;
+            } else if (message.toLowerCase().contains("not found")) {
+                status = HttpStatus.NOT_FOUND;
+            }
+        }
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now());

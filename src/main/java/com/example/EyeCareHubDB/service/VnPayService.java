@@ -8,6 +8,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -49,117 +50,150 @@ public class VnPayService {
         params.put("vnp_OrderInfo", defaultIfBlank(orderInfo, "Thanh toan don hang " + payment.getId()));
         params.put("vnp_OrderType", vnPayProperties.getOrderType());
         params.put("vnp_Locale", vnPayProperties.getLocale());
-        // params.put("vnp_BankCode", "NCB"); // Removed to match verified reference
+        // vnp_BankCode is optional. If removed, VNPAY will show bank selection page.
+        // params.put("vnp_BankCode", "NCB");
 
-        // ⚠️ luôn dùng config để tránh lệch hash
-        params.put("vnp_ReturnUrl", vnPayProperties.getReturnUrl());
-
+        String vnpReturnUrl = isBlank(customReturnUrl) ? vnPayProperties.getReturnUrl() : customReturnUrl;
+        params.put("vnp_ReturnUrl", vnpReturnUrl);
         params.put("vnp_IpAddr", ipAddr);
         params.put("vnp_CreateDate", now.format(VNPAY_TIME_FORMAT));
         params.put("vnp_ExpireDate", now.plusMinutes(15).format(VNPAY_TIME_FORMAT));
 
+        // BUILD HASH (Note: Standard 2.1.0 practice often EXCLUDES SecureHashType from hash data)
         String hashData = buildHashData(params);
-        String query = buildQuery(params);
-
         String secureHash = hmacSha512(vnPayProperties.getHashSecret(), hashData);
         
         System.out.println("====== VNPAY REQUEST DEBUG ======");
-        System.out.println("HASH DATA: " + hashData);
-        System.out.println("SECURE HASH: " + secureHash);
+        System.out.println("HASH DATA STRING: [" + hashData + "]");
+        System.out.println("CALCULATED HASH: [" + secureHash + "]");
 
-        return vnPayProperties.getPayUrl()
-                + "?" + query
-                + "&vnp_SecureHashType=SHA512"
-                + "&vnp_SecureHash=" + secureHash;
+        // BUILD URL (Include SecureHashType in URL only)
+        String query = buildQuery(params);
+        String finalUrl = vnPayProperties.getPayUrl() + "?" + query + "&vnp_SecureHashType=SHA512&vnp_SecureHash=" + secureHash;
+        
+        System.out.println("FINAL VNPAY URL: [" + finalUrl + "]");
+        return finalUrl;
     }
 
     // ================= HASH DATA =================
     private String buildHashData(Map<String, String> params) {
-        StringBuilder sb = new StringBuilder();
-
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            if (isBlank(entry.getValue()))
-                continue;
-
-            if (sb.length() > 0)
-                sb.append('&');
-
-            sb.append(entry.getKey());
-            sb.append('=');
-            sb.append(encode(entry.getValue())); // ✅ QUAN TRỌNG
-        }
-
-        return sb.toString();
+        return params.entrySet().stream()
+                .filter(e -> !isBlank(e.getValue()))
+                .map(e -> e.getKey() + "=" + encode(e.getValue()))
+                .collect(Collectors.joining("&"));
     }
 
     // ================= QUERY =================
     private String buildQuery(Map<String, String> params) {
-        StringBuilder sb = new StringBuilder();
-
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            if (isBlank(entry.getValue()))
-                continue;
-
-            if (sb.length() > 0)
-                sb.append('&');
-
-            sb.append(entry.getKey());
-            sb.append('=');
-            sb.append(encode(entry.getValue()));
-        }
-
-        return sb.toString();
+        return params.entrySet().stream()
+                .filter(e -> !isBlank(e.getValue()))
+                .map(e -> encode(e.getKey()) + "=" + encode(e.getValue()))
+                .collect(Collectors.joining("&"));
     }
 
     // ================= VALIDATE SIGNATURE =================
     public boolean validateSignature(Map<String, String> params) {
         try {
             String vnpSecureHash = params.get("vnp_SecureHash");
-
             if (vnpSecureHash == null || vnpSecureHash.isEmpty()) {
+                System.out.println("VNPAY VALIDATE: Missing vnp_SecureHash");
                 return false;
             }
 
-            // ✅ Bỏ hash ra khỏi params
+            // Remove only the hash itself. Keep EVERYTHING else for trying different combinations.
             Map<String, String> filtered = new HashMap<>(params);
             filtered.remove("vnp_SecureHash");
-            filtered.remove("vnp_SecureHashType");
 
-            // ✅ Sort key
-            List<String> fieldNames = new ArrayList<>(filtered.keySet());
-            Collections.sort(fieldNames);
+            // We will try combinations:
+            // 1. Encoding style: '+' (Standard) vs '%20' (Modern)
+            // 2. Inclusion: With 'vnp_SecureHashType' vs Without it.
+            
+            boolean match = tryValidate(filtered, vnpSecureHash, true, true, "Standard(+), WithHashType");
+            if (match) return true;
 
-            StringBuilder hashData = new StringBuilder();
+            match = tryValidate(filtered, vnpSecureHash, true, false, "Standard(+), NoHashType");
+            if (match) return true;
 
-            for (String fieldName : fieldNames) {
-                String value = filtered.get(fieldName);
+            match = tryValidate(filtered, vnpSecureHash, false, true, "Modern(%20), WithHashType");
+            if (match) return true;
 
-                if (value != null && !value.isEmpty()) {
-                    hashData.append(fieldName);
-                    hashData.append("=");
-                    hashData.append(value);
-                    hashData.append("&");
-                }
-            }
+            match = tryValidate(filtered, vnpSecureHash, false, false, "Modern(%20), NoHashType");
+            if (match) return true;
 
-            // Xóa dấu & cuối
-            if (hashData.length() > 0) {
-                hashData.deleteCharAt(hashData.length() - 1);
-            }
-
-            String calculatedHash = hmacSha512(vnPayProperties.getHashSecret(), hashData.toString());
-
-            // 🔥 DEBUG
-            System.out.println("====== DEBUG VNPAY ======");
-            System.out.println("HASH DATA: " + hashData);
-            System.out.println("CALC HASH: " + calculatedHash);
-            System.out.println("VNP HASH: " + vnpSecureHash);
-
-            return calculatedHash.equalsIgnoreCase(vnpSecureHash);
+            System.out.println("VNPAY VALIDATE: All combinations failed for signature: " + vnpSecureHash);
+            return false;
 
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    private boolean tryValidate(Map<String, String> params, String expectedHash, boolean usePlus, boolean includeHashType, String label) {
+        Map<String, String> filtered = new HashMap<>(params);
+        if (!includeHashType) {
+            filtered.remove("vnp_SecureHashType");
+        }
+
+        List<String> fieldNames = new ArrayList<>(filtered.keySet());
+        Collections.sort(fieldNames);
+
+        StringBuilder hashData = new StringBuilder();
+        for (String fieldName : fieldNames) {
+            String value = filtered.get(fieldName);
+            if (value != null && !value.isEmpty() && fieldName.startsWith("vnp_")) {
+                // VNPAY 2.1.0: keys are NOT encoded for the HASH DATA (usually vnp_ keys are safe)
+                // Values MUST be encoded consistently.
+                String encodedValue = customEncode(value, usePlus);
+                
+                hashData.append(fieldName)
+                        .append("=")
+                        .append(encodedValue)
+                        .append("&");
+            }
+        }
+
+        if (hashData.length() > 0) {
+            hashData.deleteCharAt(hashData.length() - 1);
+        }
+
+        String calculatedHash = hmacSha512(vnPayProperties.getHashSecret(), hashData.toString());
+        
+        System.out.println("VNPAY TRY [" + label + "]:");
+        System.out.println("  DATA: [" + hashData + "]");
+        System.out.println("  EXPECTED: [" + expectedHash + "]");
+        System.out.println("  CALC: [" + calculatedHash + "]");
+        
+        return calculatedHash.equalsIgnoreCase(expectedHash);
+    }
+
+    private String customEncode(String value, boolean usePlus) {
+        try {
+            // Standard encoder gives + for spaces and lowercase hex (e.g. %2f)
+            String encoded = URLEncoder.encode(value, StandardCharsets.UTF_8);
+            
+            // VNPAY 2.1.0 often expects uppercase hex (e.g. %2F)
+            // We use regex to find and uppercase hex codes
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < encoded.length(); i++) {
+                char c = encoded.charAt(i);
+                if (c == '%' && i + 2 < encoded.length()) {
+                    sb.append(c);
+                    sb.append(Character.toUpperCase(encoded.charAt(i + 1)));
+                    sb.append(Character.toUpperCase(encoded.charAt(i + 2)));
+                    i += 2;
+                } else {
+                    sb.append(c);
+                }
+            }
+            
+            String result = sb.toString();
+            if (!usePlus) {
+                result = result.replace("+", "%20");
+            }
+            return result;
+        } catch (Exception e) {
+            return value;
         }
     }
 
@@ -176,9 +210,7 @@ public class VnPayService {
     private String encode(String value) {
         try {
             String encoded = URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
-
             return encoded.replace("+", "%20");
-
         } catch (Exception e) {
             return value;
         }
@@ -199,7 +231,6 @@ public class VnPayService {
             }
 
             return result.toString().toUpperCase();
-
         } catch (Exception e) {
             throw new RuntimeException("Hash error", e);
         }

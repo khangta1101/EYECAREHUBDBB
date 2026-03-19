@@ -46,9 +46,16 @@ public class CartService {
         Long prescriptionId = request.getPrescriptionId();
         LocalDateTime expectedAt = request.getExpectedAt();
         
+        System.out.println("====== CART DEBUG ======");
+        System.out.println("CustomerId: " + customerId);
+        System.out.println("VariantId: " + variantId);
+        System.out.println("Qty: " + qty);
+
         Cart cart = getOrCreateActiveCart(customerId);
         ProductVariant variant = variantRepository.findById(variantId)
-            .orElseThrow(() -> new RuntimeException("Variant not found: " + variantId));
+            .orElseThrow(() -> new RuntimeException("Variant not found with ID: " + variantId));
+
+        System.out.println("Variant found: " + variant.getVariantName() + " (SKU: " + variant.getSku() + ")");
 
         if (!variantInventoryService.hasAvailableStock(variantId, qty)) {
             throw new RuntimeException("Not enough stock for variant: " + variantId);

@@ -94,13 +94,15 @@ public class PaymentService {
 
     @Transactional
     public VnPayCallbackResponse handleVnPayCallback(Map<String, String> queryParams) {
+        System.out.println("====== VNPAY CALLBACK DEBUG ======");
+        queryParams.forEach((key, value) -> System.out.println("  " + key + " = " + value));
 
         // ✅ LẤY TỪ VNPAY (QUAN TRỌNG NHẤT)
         String txnRef = queryParams.get("vnp_TxnRef");
 
         if (txnRef == null || txnRef.isBlank()) {
             return VnPayCallbackResponse.builder()
-                    .status("FAILED")
+                    .status(PaymentStatus.FAILED)
                     .message("Missing txnRef")
                     .build();
         }
@@ -114,7 +116,7 @@ public class PaymentService {
         if (payment == null) {
             System.out.println("❌ Không tìm thấy payment với txnRef: " + txnRef);
             return VnPayCallbackResponse.builder()
-                    .status("FAILED")
+                    .status(PaymentStatus.FAILED)
                     .message("Payment not found")
                     .build();
         }
@@ -125,7 +127,7 @@ public class PaymentService {
             return VnPayCallbackResponse.builder()
                     .paymentId(payment.getId())
                     .transactionRef(payment.getTransactionRef())
-                    .status("FAILED")
+                    .status(PaymentStatus.FAILED)
                     .validSignature(false)
                     .message("Invalid signature")
                     .build();
@@ -137,16 +139,22 @@ public class PaymentService {
         boolean success = "00".equals(responseCode)
                 && (transactionStatus.isBlank() || "00".equals(transactionStatus));
 
-        PaymentStatus targetStatus = success ? PaymentStatus.SUCCESS : PaymentStatus.FAILED;
+        PaymentStatus targetStatus = success ? PaymentStatus.PAID : PaymentStatus.FAILED;
 
-        if (payment.getStatus() != PaymentStatus.SUCCESS && payment.getStatus() != targetStatus) {
+        if (payment.getStatus() != PaymentStatus.PAID && payment.getStatus() != targetStatus) {
             updateStatus(payment.getId(), targetStatus, txnRef);
+            // Refresh payment object to get latest status for response
+            payment = paymentRepository.findById(payment.getId()).orElse(payment);
         }
 
         // ✅ update order luôn (CÁI BẠN MUỐN)
         if (success) {
             Order order = payment.getOrder();
-            order.setStatus(OrderStatus.CONFIRMED);
+            if (order != null && order.getStatus() == OrderStatus.NEW) {
+                order.setStatus(OrderStatus.CONFIRMED);
+                orderRepository.save(order);
+                System.out.println("✅ Đã cập nhật trạng thái Order sang CONFIRMED cho txnRef: " + txnRef);
+            }
         }
 
         payment.setRawResponseJson(vnPayService.serializeResponse(queryParams));
@@ -155,7 +163,7 @@ public class PaymentService {
         return VnPayCallbackResponse.builder()
                 .paymentId(payment.getId())
                 .transactionRef(payment.getTransactionRef())
-                .status(payment.getStatus().name())
+                .status(payment.getStatus())
                 .validSignature(true)
                 .responseCode(responseCode)
                 .transactionStatus(transactionStatus)
@@ -170,7 +178,7 @@ public class PaymentService {
         payment.setStatus(newStatus);
         if (transactionRef != null)
             payment.setTransactionRef(transactionRef);
-        if (newStatus == PaymentStatus.SUCCESS) {
+        if (newStatus == PaymentStatus.PAID) {
             payment.setPaidAt(LocalDateTime.now());
             Order order = payment.getOrder();
             if (order.getStatus() == OrderStatus.NEW) {
@@ -220,8 +228,8 @@ public class PaymentService {
         Payment payment = paymentRepository.findByTransactionRef(txnRef)
                 .orElseThrow(() -> new RuntimeException("Payment not found"));
 
-        if (payment.getStatus() != PaymentStatus.SUCCESS) {
-            payment.setStatus(PaymentStatus.SUCCESS);
+        if (payment.getStatus() != PaymentStatus.PAID) {
+            payment.setStatus(PaymentStatus.PAID);
             payment.setPaidAt(LocalDateTime.now());
 
             Order order = payment.getOrder();

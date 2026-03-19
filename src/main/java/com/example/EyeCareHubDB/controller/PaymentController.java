@@ -51,7 +51,7 @@ public class PaymentController {
     }
 
     @io.swagger.v3.oas.annotations.Operation(summary = "VNPay Callback", description = "Endpoint for VNPay to return transaction result. Not intended for manual use.")
-    @GetMapping("/vnpay/callback")
+    @GetMapping({ "/vnpay/callback", "/vnpay-callback" })
     public ResponseEntity<VnPayCallbackResponse> vnpayCallback(@RequestParam Map<String, String> params) {
 
         VnPayCallbackResponse response = paymentService.handleVnPayCallback(params);

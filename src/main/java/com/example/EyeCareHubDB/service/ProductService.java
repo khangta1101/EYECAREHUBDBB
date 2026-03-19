@@ -189,7 +189,7 @@ public class ProductService {
     }
 
     private String generateProductSku(String name, String providedSku) {
-        if (providedSku != null && !providedSku.isBlank()) {
+        if (providedSku != null && !providedSku.isBlank() && !providedSku.equalsIgnoreCase("null")) {
             return providedSku.trim().toUpperCase();
         }
         // Simple generator: Prefix + Name (no accents/spaces) + Random
