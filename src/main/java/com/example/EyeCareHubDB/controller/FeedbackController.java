@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Feedback")
 @RestController
-@RequestMapping("/api/feedbacks")
+@RequestMapping("/api/v1/feedbacks")
 @RequiredArgsConstructor
 public class FeedbackController {
 

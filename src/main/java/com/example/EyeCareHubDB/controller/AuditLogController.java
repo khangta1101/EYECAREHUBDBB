@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Audit Log")
 @RestController
-@RequestMapping("/api/audit-logs")
+@RequestMapping("/api/v1/audit-logs")
 @RequiredArgsConstructor
 public class AuditLogController {
 

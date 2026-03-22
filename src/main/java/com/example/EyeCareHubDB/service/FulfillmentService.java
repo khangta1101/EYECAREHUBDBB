@@ -29,6 +29,10 @@ public class FulfillmentService {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
 
+        if (!taskRepository.findByOrderIdOrderByCreatedAtAsc(orderId).isEmpty()) {
+            return; // Tasks already generated
+        }
+
         for (com.example.EyeCareHubDB.entity.OrderItem item : order.getItems()) {
             if (Boolean.TRUE.equals(item.getIsPrescription())) {
                 // Task for prescription assembly
@@ -57,17 +61,42 @@ public class FulfillmentService {
     }
 
     @Transactional
-    public FulfillmentTaskDTO updateTask(Long taskId, TaskStatus status, Long assignedToId) {
+    public FulfillmentTaskDTO updateTask(Long taskId, TaskStatus status, Long assignedToId, String note) {
         FulfillmentTask task = taskRepository.findById(taskId)
             .orElseThrow(() -> new RuntimeException("Task not found: " + taskId));
-        task.setStatus(status);
-        if (status == TaskStatus.IN_PROGRESS && task.getStartedAt() == null) {
-            task.setStartedAt(LocalDateTime.now());
+        
+        if (status != null) {
+            task.setStatus(status);
+            if (status == TaskStatus.IN_PROGRESS) {
+                if (task.getStartedAt() == null) task.setStartedAt(LocalDateTime.now());
+                // If moving to IN_PROGRESS, assign to the person who started it if not already assigned
+                if (task.getAssignedTo() == null && assignedToId != null) {
+                    task.setAssignedTo(Account.builder().id(assignedToId).build());
+                }
+            }
+            if (status == TaskStatus.DONE) {
+                task.setDoneAt(LocalDateTime.now());
+                
+                // If this was a prescription/preorder task, check if the whole order can move to PROCESSING
+                Order order = task.getOrder();
+                if (order.getStatus() == Order.OrderStatus.LAB_PROCESSING || order.getStatus() == Order.OrderStatus.AWAITING_STOCK) {
+                    boolean allPrepDone = taskRepository.findByOrderIdOrderByCreatedAtAsc(order.getId()).stream()
+                        .filter(t -> t.getTaskType() == TaskType.CUT_LENS || t.getTaskType() == TaskType.ASSEMBLE || t.getTaskType() == TaskType.RECEIVE_PREORDER)
+                        .allMatch(t -> t.getStatus() == TaskStatus.DONE);
+                    
+                    if (allPrepDone) {
+                        order.setStatus(Order.OrderStatus.PROCESSING);
+                        orderRepository.save(order);
+                    }
+                }
+            }
         }
-        if (status == TaskStatus.DONE) {
-            task.setDoneAt(LocalDateTime.now());
+        
+        if (note != null) {
+            task.setNote(note);
         }
-        if (assignedToId != null) {
+        
+        if (assignedToId != null && task.getAssignedTo() == null) {
             task.setAssignedTo(Account.builder().id(assignedToId).build());
         }
         return toDTO(taskRepository.save(task));
@@ -90,6 +119,20 @@ public class FulfillmentService {
                 t.setNote("Stock arrived, qty recognized: " + orderQty);
                 taskRepository.save(t);
                 remainingQty -= orderQty;
+
+                // After receiving stock, check if order can move from AWAITING_STOCK to PROCESSING
+                Order order = t.getOrder();
+                if (order.getStatus() == Order.OrderStatus.AWAITING_STOCK) {
+                    boolean allReceived = order.getItems().stream()
+                        .filter(item -> item.getPreorderExpectedAt() != null)
+                        .allMatch(item -> taskRepository.findByTaskTypeAndStatus(TaskType.RECEIVE_PREORDER, TaskStatus.DONE).stream()
+                            .anyMatch(task -> task.getOrderItem() != null && task.getOrderItem().getId().equals(item.getId())));
+                    
+                    if (allReceived) {
+                        order.setStatus(Order.OrderStatus.PROCESSING);
+                        orderRepository.save(order);
+                    }
+                }
             }
         }
     }
@@ -103,6 +146,13 @@ public class FulfillmentService {
 
     @Transactional(readOnly = true)
     public List<FulfillmentTaskDTO> getMyTasks(Long accountId, TaskStatus status) {
+        if (status == TaskStatus.PENDING) {
+            // Include unassigned tasks that any staff can pick up
+            return taskRepository.findAll().stream()
+                .filter(t -> t.getStatus() == TaskStatus.PENDING && (t.getAssignedTo() == null || t.getAssignedTo().getId().equals(accountId)))
+                .map(this::toDTO)
+                .toList();
+        }
         return taskRepository.findByAssignedToIdAndStatus(accountId, status).stream()
             .map(this::toDTO)
             .toList();
@@ -119,6 +169,8 @@ public class FulfillmentService {
             .assignedToId(task.getAssignedTo() != null ? task.getAssignedTo().getId() : null)
             .assignedToEmail(task.getAssignedTo() != null ? task.getAssignedTo().getEmail() : null)
             .note(task.getNote())
+            .productName(task.getOrderItem() != null ? task.getOrderItem().getVariant().getProduct().getName() : null)
+            .variantName(task.getOrderItem() != null ? task.getOrderItem().getVariant().getVariantName() : null)
             .startedAt(task.getStartedAt())
             .doneAt(task.getDoneAt())
             .createdAt(task.getCreatedAt())

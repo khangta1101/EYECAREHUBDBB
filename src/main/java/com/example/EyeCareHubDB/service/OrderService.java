@@ -56,8 +56,10 @@ public class OrderService {
     private static final Map<OrderStatus, EnumSet<OrderStatus>> VALID_TRANSITIONS;
     static {
         VALID_TRANSITIONS = new HashMap<>();
-        VALID_TRANSITIONS.put(OrderStatus.NEW,        EnumSet.of(OrderStatus.CONFIRMED, OrderStatus.CANCELLED));
-        VALID_TRANSITIONS.put(OrderStatus.CONFIRMED,  EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
+        VALID_TRANSITIONS.put(OrderStatus.NEW,        EnumSet.of(OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.AWAITING_STOCK, OrderStatus.LAB_PROCESSING, OrderStatus.CANCELLED));
+        VALID_TRANSITIONS.put(OrderStatus.CONFIRMED,  EnumSet.of(OrderStatus.PROCESSING, OrderStatus.AWAITING_STOCK, OrderStatus.LAB_PROCESSING, OrderStatus.CANCELLED));
+        VALID_TRANSITIONS.put(OrderStatus.AWAITING_STOCK, EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
+        VALID_TRANSITIONS.put(OrderStatus.LAB_PROCESSING, EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
         VALID_TRANSITIONS.put(OrderStatus.PROCESSING, EnumSet.of(OrderStatus.SHIPPED, OrderStatus.CANCELLED));
         VALID_TRANSITIONS.put(OrderStatus.SHIPPED,    EnumSet.of(OrderStatus.COMPLETED));
         VALID_TRANSITIONS.put(OrderStatus.COMPLETED,  EnumSet.of(OrderStatus.REFUNDED));
@@ -186,7 +188,8 @@ public class OrderService {
             order.getItems().forEach(i ->
                 inventoryService.confirmStock(i.getVariant().getId(), i.getQty()));
         }
-        if (newStatus == OrderStatus.CONFIRMED && current == OrderStatus.NEW) {
+        if (current == OrderStatus.NEW && (newStatus == OrderStatus.CONFIRMED || newStatus == OrderStatus.PROCESSING 
+            || newStatus == OrderStatus.AWAITING_STOCK || newStatus == OrderStatus.LAB_PROCESSING)) {
             fulfillmentService.generateTasksForOrder(orderId);
         }
         order.setStatus(newStatus);

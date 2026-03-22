@@ -34,9 +34,10 @@ public class FulfillmentController {
 
     @PatchMapping("/tasks/{taskId}")
     public ResponseEntity<FulfillmentTaskDTO> updateTask(@PathVariable("taskId") Long taskId,
-                                                       @RequestParam("status") TaskStatus status,
-                                                       @RequestParam(value = "assignedToId", required = false) Long assignedToId) {
-        return ResponseEntity.ok(fulfillmentService.updateTask(taskId, status, assignedToId));
+                                                       @RequestParam(value = "status", required = false) TaskStatus status,
+                                                       @RequestParam(value = "assignedToId", required = false) Long assignedToId,
+                                                       @RequestParam(value = "note", required = false) String note) {
+        return ResponseEntity.ok(fulfillmentService.updateTask(taskId, status, assignedToId, note));
     }
 
     @GetMapping("/my-tasks")

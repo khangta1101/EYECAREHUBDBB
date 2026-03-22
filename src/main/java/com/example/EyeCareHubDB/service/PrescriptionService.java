@@ -68,17 +68,21 @@ public class PrescriptionService {
         Prescription existing = prescriptionRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Prescription not found: " + id));
         validatePrescriptionValues(updated);
-        existing.setSphereOD(updated.getSphereOD());
-        existing.setCylOD(updated.getCylOD());
-        existing.setAxisOD(updated.getAxisOD());
-        existing.setAddOD(updated.getAddOD());
-        existing.setSphereOS(updated.getSphereOS());
-        existing.setCylOS(updated.getCylOS());
-        existing.setAxisOS(updated.getAxisOS());
-        existing.setAddOS(updated.getAddOS());
-        existing.setPdTotal(updated.getPdTotal());
-        existing.setPrescriptionFileUrl(updated.getPrescriptionFileUrl());
-        existing.setNotes(updated.getNotes());
+        
+        if (updated.getSphereOD() != null) existing.setSphereOD(updated.getSphereOD());
+        if (updated.getSphereOS() != null) existing.setSphereOS(updated.getSphereOS());
+        if (updated.getCylOD() != null) existing.setCylOD(updated.getCylOD());
+        if (updated.getCylOS() != null) existing.setCylOS(updated.getCylOS());
+        if (updated.getAxisOD() != null) existing.setAxisOD(updated.getAxisOD());
+        if (updated.getAxisOS() != null) existing.setAxisOS(updated.getAxisOS());
+        if (updated.getAddOD() != null) existing.setAddOD(updated.getAddOD());
+        if (updated.getAddOS() != null) existing.setAddOS(updated.getAddOS());
+        if (updated.getPdTotal() != null) existing.setPdTotal(updated.getPdTotal());
+        if (updated.getPdLeft() != null) existing.setPdLeft(updated.getPdLeft());
+        if (updated.getPdRight() != null) existing.setPdRight(updated.getPdRight());
+        if (updated.getPrescriptionFileUrl() != null) existing.setPrescriptionFileUrl(updated.getPrescriptionFileUrl());
+        if (updated.getNotes() != null) existing.setNotes(updated.getNotes());
+        
         return prescriptionRepository.save(existing);
     }
 }

@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Cart")
 @RestController
-@RequestMapping("/api/cart")
+@RequestMapping("/api/v1/cart")
 @RequiredArgsConstructor
 public class CartController {
 
