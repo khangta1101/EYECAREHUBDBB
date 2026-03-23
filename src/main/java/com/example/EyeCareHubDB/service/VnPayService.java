@@ -68,7 +68,9 @@ public class VnPayService {
                 String encodedKey = encode(key);
                 String encodedValue = encode(value);
 
+                // For signData, keys are NOT encoded, but values ARE encoded.
                 hashData.append(key).append("=").append(encodedValue).append("&");
+                // For query string, both keys and values ARE encoded.
                 query.append(encodedKey).append("=").append(encodedValue).append("&");
             }
         }
@@ -80,7 +82,8 @@ public class VnPayService {
         String secureHash = hmacSha512(vnPayProperties.getHashSecret().trim(), hashData.toString());
 
         System.out.println("====== VNPAY REQUEST DEBUG ======");
-        System.out.println("HASH DATA: [" + hashData + "]");
+        System.out.println("TMN CODE: [" + vnPayProperties.getTmnCode().trim() + "]");
+        System.out.println("HASH STRING: [" + hashData + "]");
         System.out.println("SECURE HASH: [" + secureHash + "]");
 
         String finalUrl = vnPayProperties.getPayUrl() + "?" + query.toString() + "&vnp_SecureHash=" + secureHash;
@@ -209,25 +212,9 @@ public class VnPayService {
     // ================= ENCODE =================
     private String encode(String value) {
         try {
-            // Standard encoder gives + for spaces and lowercase hex (e.g. %2f)
-            String encoded = URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
-            
-            // Uppercase hex codes (e.g. %2f -> %2F) and replace + with %20
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < encoded.length(); i++) {
-                char c = encoded.charAt(i);
-                if (c == '%' && i + 2 < encoded.length()) {
-                    sb.append(c);
-                    sb.append(Character.toUpperCase(encoded.charAt(i + 1)));
-                    sb.append(Character.toUpperCase(encoded.charAt(i + 2)));
-                    i += 2;
-                } else if (c == '+') {
-                    sb.append("%20");
-                } else {
-                    sb.append(c);
-                }
-            }
-            return sb.toString();
+            // Standard VNPAY Java Demo uses URLEncoder.encode which results in '+' for spaces.
+            // Although 2.1.0 preferred %20, some Sandbox environments are strict about the '+' character.
+            return URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
         } catch (Exception e) {
             return value;
         }
