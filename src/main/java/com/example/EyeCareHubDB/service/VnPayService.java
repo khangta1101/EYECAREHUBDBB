@@ -57,38 +57,39 @@ public class VnPayService {
         params.put("vnp_CreateDate", now.format(VNPAY_TIME_FORMAT));
         params.put("vnp_ExpireDate", now.plusMinutes(15).format(VNPAY_TIME_FORMAT));
 
-        // BUILD HASH (vnp_SecureHashType is EXCLUDED from hash data in many 2.1.0 setups)
-        String hashData = buildHashData(params);
-        String secureHash = hmacSha512(vnPayProperties.getHashSecret().trim(), hashData);
-        
-        System.out.println("====== VNPAY REQUEST DEBUG ======");
-        System.out.println("HASH DATA STRING: [" + hashData + "]");
-        System.out.println("CALCULATED HASH: [" + secureHash + "]");
+        // BUILD HASH DATA & QUERY STRING
+        StringBuilder hashData = new StringBuilder();
+        StringBuilder query = new StringBuilder();
 
-        // BUILD URL (Include SecureHashType in URL only)
-        String query = buildQuery(params);
-        String finalUrl = vnPayProperties.getPayUrl() + "?" + query + 
-                         "&vnp_SecureHashType=SHA512&vnp_SecureHash=" + secureHash;
-        
-        System.out.println("FINAL VNPAY URL: [" + finalUrl + "]");
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (value != null && !value.isBlank()) {
+                String encodedKey = encode(key);
+                String encodedValue = encode(value);
+
+                hashData.append(key).append("=").append(encodedValue).append("&");
+                query.append(encodedKey).append("=").append(encodedValue).append("&");
+            }
+        }
+
+        // Remove trailing &
+        if (hashData.length() > 0) hashData.setLength(hashData.length() - 1);
+        if (query.length() > 0) query.setLength(query.length() - 1);
+
+        String secureHash = hmacSha512(vnPayProperties.getHashSecret().trim(), hashData.toString());
+
+        System.out.println("====== VNPAY REQUEST DEBUG ======");
+        System.out.println("HASH DATA: [" + hashData + "]");
+        System.out.println("SECURE HASH: [" + secureHash + "]");
+
+        String finalUrl = vnPayProperties.getPayUrl() + "?" + query.toString() + "&vnp_SecureHash=" + secureHash;
+        System.out.println("FINAL URL: [" + finalUrl + "]");
         return finalUrl;
     }
 
     // ================= HASH DATA =================
-    private String buildHashData(Map<String, String> params) {
-        return params.entrySet().stream()
-                .filter(e -> !isBlank(e.getValue()))
-                .map(e -> e.getKey() + "=" + encode(e.getValue()))
-                .collect(Collectors.joining("&"));
-    }
-
-    // ================= QUERY =================
-    private String buildQuery(Map<String, String> params) {
-        return params.entrySet().stream()
-                .filter(e -> !isBlank(e.getValue()))
-                .map(e -> encode(e.getKey()) + "=" + encode(e.getValue()))
-                .collect(Collectors.joining("&"));
-    }
+    // Removed redundant buildHashData and buildQuery methods as they are now integrated into buildPaymentUrl for consistency.
 
     // ================= VALIDATE SIGNATURE =================
     public boolean validateSignature(Map<String, String> params) {

@@ -81,7 +81,7 @@ public class OrderService {
         Address shippingAddress = addressRepository.findById(addressId)
             .orElseThrow(() -> new RuntimeException("Address not found: " + addressId));
 
-        Cart cart = cartService.getCart(customerId);
+        Cart cart = cartService.getOrCreateActiveCart(customerId);
         List<CartItem> items = cart.getItems();
         if (items.isEmpty()) throw new RuntimeException("Cart is empty");
 
