@@ -12,6 +12,11 @@ import org.springframework.data.domain.PageRequest;
 import com.example.EyeCareHubDB.entity.Promotion;
 import com.example.EyeCareHubDB.service.PromotionService;
 
+import com.example.EyeCareHubDB.dto.PromotionDTO;
+import java.util.Map;
+import java.util.HashMap;
+import java.math.BigDecimal;
+
 import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Promotion")
@@ -37,5 +42,25 @@ public class PromotionController {
     @PutMapping("/{id}")
     public ResponseEntity<Promotion> update(@PathVariable("id") Long id, @RequestBody Promotion promotion) {
         return ResponseEntity.ok(promotionService.updatePromotion(id, promotion));
+    }
+
+    @GetMapping("/validate")
+    public ResponseEntity<?> validate(@RequestParam("code") String code, 
+                                     @RequestParam(value = "subtotal", defaultValue = "0") java.math.BigDecimal subtotal) {
+        try {
+            java.util.Optional<com.example.EyeCareHubDB.entity.Promotion> promoOpt = promotionService.validateCode(code, subtotal);
+            if (promoOpt.isPresent()) {
+                com.example.EyeCareHubDB.entity.Promotion promo = promoOpt.get();
+                java.math.BigDecimal discount = promotionService.calculateDiscount(promo, subtotal, new java.math.BigDecimal("30000"));
+                java.util.Map<String, Object> response = new java.util.HashMap<>();
+                response.put("promotion", promotionService.toDTO(promo));
+                response.put("discountAmount", discount);
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.badRequest().body("Invalid promotion code");
+            }
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
