@@ -18,6 +18,7 @@ import com.example.EyeCareHubDB.dto.AddressDTO;
 import com.example.EyeCareHubDB.dto.CustomerDTO;
 import com.example.EyeCareHubDB.dto.OrderDTO;
 import com.example.EyeCareHubDB.dto.OrderItemDTO;
+import com.example.EyeCareHubDB.dto.PaymentDTO;
 import com.example.EyeCareHubDB.dto.PrescriptionDTO;
 import com.example.EyeCareHubDB.dto.ProductVariantDTO;
 import com.example.EyeCareHubDB.dto.PromotionDTO;
@@ -177,6 +178,9 @@ public class OrderService {
             .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
         OrderStatus current = order.getStatus();
         EnumSet<OrderStatus> allowed = VALID_TRANSITIONS.getOrDefault(current, EnumSet.noneOf(OrderStatus.class));
+        if (newStatus == current) {
+            return toDTO(order);
+        }
         if (!allowed.contains(newStatus)) {
             throw new RuntimeException("Cannot transition from " + current + " to " + newStatus);
         }
@@ -188,8 +192,8 @@ public class OrderService {
             order.getItems().forEach(i ->
                 inventoryService.confirmStock(i.getVariant().getId(), i.getQty()));
         }
-        if (current == OrderStatus.NEW && (newStatus == OrderStatus.CONFIRMED || newStatus == OrderStatus.PROCESSING 
-            || newStatus == OrderStatus.AWAITING_STOCK || newStatus == OrderStatus.LAB_PROCESSING)) {
+        if (newStatus == OrderStatus.CONFIRMED || newStatus == OrderStatus.PROCESSING 
+            || newStatus == OrderStatus.AWAITING_STOCK || newStatus == OrderStatus.LAB_PROCESSING) {
             fulfillmentService.generateTasksForOrder(orderId);
         }
         order.setStatus(newStatus);
@@ -235,7 +239,24 @@ public class OrderService {
             .grandTotal(order.getGrandTotal())
             .note(order.getNote())
             .items(order.getItems().stream().map(this::toOrderItemDTO).collect(Collectors.toList()))
+            .payments(order.getPayments() != null ? order.getPayments().stream().map(this::toPaymentDTO).collect(Collectors.toList()) : null)
             .createdAt(order.getCreatedAt())
+            .build();
+    }
+
+    private PaymentDTO toPaymentDTO(com.example.EyeCareHubDB.entity.Payment p) {
+        if (p == null) return null;
+        return PaymentDTO.builder()
+            .id(p.getId())
+            .orderId(p.getOrder().getId())
+            .paymentPurpose(p.getPaymentPurpose() != null ? p.getPaymentPurpose().name() : null)
+            .provider(p.getProvider() != null ? p.getProvider().name() : null)
+            .amount(p.getAmount())
+            .currency(p.getCurrency())
+            .status(p.getStatus() != null ? p.getStatus().name() : null)
+            .transactionRef(p.getTransactionRef())
+            .paidAt(p.getPaidAt())
+            .createdAt(p.getCreatedAt())
             .build();
     }
 

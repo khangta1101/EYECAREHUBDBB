@@ -29,5 +29,6 @@ public class OrderDTO {
     private BigDecimal grandTotal;
     private String note;
     private List<OrderItemDTO> items;
+    private List<PaymentDTO> payments;
     private LocalDateTime createdAt;
 }

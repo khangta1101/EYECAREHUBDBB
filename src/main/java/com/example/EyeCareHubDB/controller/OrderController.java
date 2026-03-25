@@ -38,10 +38,8 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<OrderDTO>> getAll(
-            @RequestParam(value = "page", defaultValue = "0") Integer page,
-            @RequestParam(value = "size", defaultValue = "10") Integer size) {
-        return ResponseEntity.ok(orderService.getAllOrders(PageRequest.of(page, size)));
+    public ResponseEntity<Page<OrderDTO>> getAll(org.springframework.data.domain.Pageable pageable) {
+        return ResponseEntity.ok(orderService.getAllOrders(pageable));
     }
 
     @PatchMapping("/{id}/status")

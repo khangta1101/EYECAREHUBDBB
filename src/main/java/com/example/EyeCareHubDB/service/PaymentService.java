@@ -32,6 +32,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final VnPayService vnPayService;
+    private final FulfillmentService fulfillmentService;
 
     @Transactional
     public PaymentDTO createPayment(CreatePaymentRequest request) {
@@ -153,7 +154,8 @@ public class PaymentService {
             if (order != null && order.getStatus() == OrderStatus.NEW) {
                 order.setStatus(OrderStatus.CONFIRMED);
                 orderRepository.save(order);
-                System.out.println("✅ Đã cập nhật trạng thái Order sang CONFIRMED cho txnRef: " + txnRef);
+                fulfillmentService.generateTasksForOrder(order.getId());
+                System.out.println("✅ Đã cập nhật trạng thái Order sang CONFIRMED và tạo tasks cho txnRef: " + txnRef);
             }
         }
 
@@ -184,6 +186,7 @@ public class PaymentService {
             if (order.getStatus() == OrderStatus.NEW) {
                 order.setStatus(OrderStatus.CONFIRMED);
                 orderRepository.save(order);
+                fulfillmentService.generateTasksForOrder(order.getId());
             }
         }
         return toDTO(paymentRepository.save(payment));

@@ -75,6 +75,10 @@ public class Order {
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
 
+    @OneToMany(mappedBy = "order")
+    @Builder.Default
+    private List<Payment> payments = new ArrayList<>();
+
     @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
