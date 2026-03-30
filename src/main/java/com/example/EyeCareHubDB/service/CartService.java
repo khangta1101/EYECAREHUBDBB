@@ -45,11 +45,13 @@ public class CartService {
         int qty = request.getQty();
         Long prescriptionId = request.getPrescriptionId();
         LocalDateTime expectedAt = request.getExpectedAt();
+        boolean preOrder = request.getIsPreorder() != null ? request.getIsPreorder() : false;
         
         System.out.println("====== CART DEBUG ======");
         System.out.println("CustomerId: " + customerId);
         System.out.println("VariantId: " + variantId);
         System.out.println("Qty: " + qty);
+        System.out.println("IsPreorder: " + preOrder);
 
         Cart cart = getOrCreateActiveCart(customerId);
         ProductVariant variant = variantRepository.findById(variantId)
@@ -57,7 +59,8 @@ public class CartService {
 
         System.out.println("Variant found: " + variant.getVariantName() + " (SKU: " + variant.getSku() + ")");
 
-        if (!variantInventoryService.hasAvailableStock(variantId, qty)) {
+        // Only check stock if NOT a preorder
+        if (!preOrder && !variantInventoryService.hasAvailableStock(variantId, qty)) {
             throw new RuntimeException("Not enough stock for variant: " + variantId);
         }
 
@@ -79,8 +82,6 @@ public class CartService {
 
         BigDecimal additional = variant.getAdditionalPrice() != null ? variant.getAdditionalPrice() : BigDecimal.ZERO;
         BigDecimal price = basePrice.add(additional);
-
-        boolean preOrder = request.getIsPreorder() != null ? request.getIsPreorder() : false;
 
         return cartItemRepository.findByCartAndVariantAndPrescriptionIdAndIsPreorder(cart, variant, prescriptionId, preOrder)
             .map(existing -> {
