@@ -182,29 +182,36 @@ public class VariantInventoryService {
             return;
         }
 
-        int totalReserved = stocks.stream().mapToInt(InventoryStock::getReservedQty).sum();
-        if (desiredStockQuantity < totalReserved) {
-            throw new RuntimeException("Cannot set stock below reserved quantity for variant: " + variant.getSku());
-        }
-
+        // REDUCING STOCK
         int remainingToReduce = currentTotal - desiredStockQuantity;
+        
+        // Phase 1: Reduce unreserved (available) stock first
         for (InventoryStock stock : stocks) {
-            int reducible = stock.getOnHandQty() - stock.getReservedQty();
-            if (reducible <= 0) {
-                continue;
-            }
-
-            int reduced = Math.min(reducible, remainingToReduce);
+            int available = stock.getOnHandQty() - stock.getReservedQty();
+            if (available <= 0) continue;
+            
+            int reduced = Math.min(available, remainingToReduce);
             stock.setOnHandQty(stock.getOnHandQty() - reduced);
             stockRepository.save(stock);
             remainingToReduce -= reduced;
-
-            if (remainingToReduce == 0) {
-                return;
+            
+            if (remainingToReduce == 0) return;
+        }
+        
+        // Phase 2: If still need to reduce, reduce even the reserved part of physical stock.
+        // This will lead to OnHandQty < ReservedQty (negative available quantity).
+        if (remainingToReduce > 0) {
+            for (InventoryStock stock : stocks) {
+                if (stock.getOnHandQty() <= 0) continue;
+                
+                int reduced = Math.min(stock.getOnHandQty(), remainingToReduce);
+                stock.setOnHandQty(stock.getOnHandQty() - reduced);
+                stockRepository.save(stock);
+                remainingToReduce -= reduced;
+                
+                if (remainingToReduce == 0) return;
             }
         }
-
-        throw new RuntimeException("Unable to reduce stock to requested quantity for variant: " + variant.getSku());
     }
 
     private VariantStockSnapshot summarize(List<InventoryStock> stocks) {
