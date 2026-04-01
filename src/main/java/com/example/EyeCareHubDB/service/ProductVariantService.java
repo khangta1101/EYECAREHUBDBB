@@ -20,6 +20,13 @@ import com.example.EyeCareHubDB.service.VariantInventoryService.VariantStockSnap
 
 import lombok.RequiredArgsConstructor;
 
+// ============================================================
+// SERVICE: ProductVariantService — Quản lý các BIẾN THỂ (Variant) của sản phẩm.
+// Mỗi sản phẩm có thể có nhiều variant về: màu, size, chất liệu.
+// Ví dụ: Gọng Ray-Ban → [Đen-M, Vàng-M, Đen-L] — mỗi variant có SKU, giá, kho riêng.
+// SKU variant: tự sinh từ SKU sản phẩm + màu + size. VD: "P-KINHM-DEN-M".
+// stockQuantity trong DTO = tổng onHandQty từ tất cả Location (kho).
+// ============================================================
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -29,12 +36,14 @@ public class ProductVariantService {
     private final ProductRepository productRepository;
     private final VariantInventoryService variantInventoryService;
     
+    // Lấy TẤT CẢ biến thể (kể cả inactive) của sản phẩm. Dùng cho admin quản lý.
     public List<ProductVariantDTO> getVariantsByProductId(Long productId) {
         return variantRepository.findByProductId(productId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
     
+    // Lấy biến thể ACTIVE (isActive=true). Dùng cho frontend — chỉ hiển thị loại còn bán.
     public List<ProductVariantDTO> getActiveVariantsByProductId(Long productId) {
         return variantRepository.findByProductIdAndIsActiveTrue(productId).stream()
                 .map(this::toDTO)
@@ -47,12 +56,14 @@ public class ProductVariantService {
                 .orElseThrow(() -> new RuntimeException("Product variant not found with id: " + id));
     }
     
+    // Tra cứu biến thể theo SKU (mã hàng unique). Dùng khi xử lý đơn hàng hoặc quản lý kho.
     public ProductVariantDTO getVariantBySku(String sku) {
         return variantRepository.findBySku(sku)
                 .map(this::toDTO)
                 .orElseThrow(() -> new RuntimeException("Product variant not found with sku: " + sku));
     }
     
+    // Tạo biến thể mới. SKU tự sinh nếu không có. Nếu có stockQuantity → nhập kho ngay.
     public ProductVariantDTO createVariant(Long productId, ProductVariantCreateRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
@@ -80,6 +91,7 @@ public class ProductVariantService {
         return toDTO(saved);
     }
 
+    // Xác định SKU: nếu được cung cấp và unique → dùng luôn. Ngược lại → tự sinh.
     private String resolveSku(Product product, ProductVariantCreateRequest request) {
         if (request.getSku() != null && !request.getSku().isBlank()) {
             String normalized = request.getSku().trim().toUpperCase();
@@ -91,6 +103,8 @@ public class ProductVariantService {
         return generateUniqueSku(product, request);
     }
 
+    // Tự sinh SKU: productSku + màu(3 ký tự đầu) + size. Thêm suffix số nếu trùng.
+    // Fallback cuối: thêm 4 ký tự UUID ngẫu nhiên.
     private String generateUniqueSku(Product product, ProductVariantCreateRequest request) {
         String baseSku = product.getSku() != null ? product.getSku() : "P" + product.getId();
         StringBuilder sb = new StringBuilder(baseSku);
@@ -109,7 +123,7 @@ public class ProductVariantService {
             return candidate;
         }
 
-        // Add random suffix if collision
+        // Thêm số suffix ngẫu nhiên (10-99) nếu SKU trùng
         for (int i = 0; i < 10; i++) {
             int suffix = ThreadLocalRandom.current().nextInt(10, 100);
             candidate = prefix + "-" + suffix;
@@ -121,6 +135,7 @@ public class ProductVariantService {
         return prefix + "-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase();
     }
     
+    // Cập nhật biến thể (partial update). Nếu có stockQuantity → đồng bộ kho.
     public ProductVariantDTO updateVariant(Long id, ProductVariantUpdateRequest request) {
         ProductVariant variant = variantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product variant not found with id: " + id));
@@ -160,6 +175,7 @@ public class ProductVariantService {
         return toDTO(updated);
     }
     
+    // Xóa mềm biến thể (isActive=false). Không xóa DB để giữ lịch sử đơn hàng.
     public void deleteVariant(Long id) {
         ProductVariant variant = variantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product variant not found with id: " + id));
@@ -167,6 +183,7 @@ public class ProductVariantService {
         variantRepository.save(variant);
     }
     
+    // Lấy trạng thái tồn kho: stockQty (onHand), reservedQty, availableQty.
     public VariantStockResponse getStockStatus(Long id) {
         ProductVariant variant = variantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product variant not found with id: " + id));
@@ -181,10 +198,12 @@ public class ProductVariantService {
                 .build();
     }
     
+    // Kiểm tra variant còn đủ số lượng để bán không (availableQty >= quantity).
     public boolean hasStock(Long id, Integer quantity) {
         return variantInventoryService.hasAvailableStock(id, quantity);
     }
     
+    // Xuất kho NGAY: trừ trực tiếp onHandQty (không qua reserved). Dùng xuất kho thủ công.
     public void decrementStock(Long id, Integer quantity) {
         ProductVariant variant = variantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product variant not found with id: " + id));
@@ -192,6 +211,7 @@ public class ProductVariantService {
         variantInventoryService.decrementAvailableStock(variant, quantity);
     }
     
+    // Nhập kho: tăng onHandQty tại Location mặc định.
     public void incrementStock(Long id, Integer quantity) {
         ProductVariant variant = variantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product variant not found with id: " + id));
@@ -199,6 +219,7 @@ public class ProductVariantService {
         variantInventoryService.incrementStock(variant, quantity);
     }
     
+    // Convert ProductVariant → ProductVariantDTO. Đọc thêm stockSnapshot từ InventoryService.
     private ProductVariantDTO toDTO(ProductVariant variant) {
         VariantStockSnapshot stockSnapshot = variantInventoryService.getStockSnapshot(variant);
 

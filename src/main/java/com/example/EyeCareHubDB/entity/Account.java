@@ -18,6 +18,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// ============================================================
+// ENTITY: Account — Tài khoản đăng nhập hệ thống.
+// AccountRole: CUSTOMER | ADMIN | STAFF | MANAGER | OPERATIONS_STAFF
+// AccountStatus: ACTIVE | INACTIVE | SUSPENDED | DELETED
+// Mỗi Account có 1 Customer (cấu trúc tách biệt: Account = đậu nhập, Customer = hồ sơ nhân khẩu)
+// phoneNumber, updatedAt, customer: @Transient (không lưu DB)
+// ============================================================
 @Entity
 @Table(name = "accounts")
 @Data
@@ -81,10 +88,12 @@ public class Account {
         updatedAt = LocalDateTime.now();
     }
     
+    // Vai trò: CUSTOMER=mua hàng, ADMIN=quản trị, STAFF=bán hàng, MANAGER=quản lý, OPERATIONS_STAFF=kho/xưởng
     public enum AccountRole {
         CUSTOMER, ADMIN, STAFF, MANAGER, OPERATIONS_STAFF
     }
     
+    // Trạng thái tài khoản: ACTIVE=đang hoạt động, INACTIVE=chưa kích hoạt, SUSPENDED=bị khóa, DELETED=đã xóa
     public enum AccountStatus {
         ACTIVE, INACTIVE, SUSPENDED, DELETED
     }

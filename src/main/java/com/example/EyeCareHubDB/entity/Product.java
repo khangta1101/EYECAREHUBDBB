@@ -25,6 +25,12 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+// ============================================================
+// ENTITY: Product — Sản phẩm gốc (cha). Mỗi product có nhiều ProductVariant (biến thể).
+// searchTags = slug URL SEO (như slug, ví dụ: "gong-rayban-classic"). Phải unique.
+// basePrice, salePrice, fullDescription: @Transient (không cót trong bảng products, tổng hợp từ variants).
+// isActive=false: xóa mềm (sản phẩm vẫn tồn tại trong DB, ẩn khỏi frontend).
+// ============================================================
 @Entity
 @Table(name = "products")
 @Data
@@ -41,6 +47,7 @@ public class Product {
     @Column(name = "\"Name\"", nullable = false, length = 200)
     private String name;
     
+    // searchTags: slug URL SEO-friendly, unique, dùng cho routing frontend
     @Column(name = "\"SearchTags\"", length = 200)
     private String searchTags;
     
@@ -62,6 +69,7 @@ public class Product {
     @Column(name = "\"Description\"", length = 2000)
     private String description;
     
+    // @Transient: không lưu vào DB, tập hợp từ bảng khác hoặc tính toán runtime
     @Transient
     private String fullDescription;
     

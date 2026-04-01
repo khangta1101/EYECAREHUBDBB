@@ -6,6 +6,12 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import lombok.*;
 
+// ============================================================
+// ENTITY: CartItem — 1 sản phẩm trong giỏ hàng.
+// ⭐ unitPriceSnap: snapshot giá tại thời điểm nhấn "Thêm vào giỏ" (chốt giá, không đổi dù giá sản phẩm thay đổi sau).
+// isPreorder=true → bỏ qua kiểm tra kho, cho phép đặt hàng dù hết kho.
+// prescriptionId: ID của đơn thuốc gắn kèm (nếu có). Lưu bằng Long, không phải FK JPA.
+// ============================================================
 @Entity
 @Table(name = "CartItems")
 @Data

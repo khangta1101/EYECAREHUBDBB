@@ -21,6 +21,12 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+// ============================================================
+// ENTITY: ProductVariant — Biến thể của sản phẩm (màu, size, chất liệu).
+// Mỗi variant có SKU riêng (unique), giá riêng, tồn kho riêng.
+// basePrice: giá gốc. salePrice: giá khó (nếu có). additionalPrice: @Transient (phụ trội thêm vào giá sản phẩm cha).
+// stockQuantity, reservedQuantity: @Transient — đọc từ InventoryStock khi trả DTO.
+// ============================================================
 @Entity
 @Table(name = "\"ProductVariants\"")
 @Data
@@ -62,12 +68,14 @@ public class ProductVariant {
     @Builder.Default
     private String currency = "VND";
     
+    // basePrice: giá niêm yết. salePrice: giá đang khuyến mãi (nếu có). CartService uu tiên salePrice.
     @Column(name = "\"BasePrice\"", precision = 18, scale = 2)
     private BigDecimal basePrice;
     
     @Column(name = "\"SalePrice\"", precision = 18, scale = 2)
     private BigDecimal salePrice;
     
+    // @Transient: không có trong bảng ProductVariants, chỉ tồn tại trong bộ nhớ
     @Transient // Not in DB
     private BigDecimal additionalPrice;
     

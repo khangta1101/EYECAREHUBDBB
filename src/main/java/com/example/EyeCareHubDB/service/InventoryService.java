@@ -16,6 +16,11 @@ import com.example.EyeCareHubDB.repository.ProductVariantRepository;
 
 import lombok.RequiredArgsConstructor;
 
+// ============================================================
+// SERVICE: InventoryService — Lớp trung gian (Facade) giữa Controller và VariantInventoryService.
+// Thiết kế 2 lớp: InventoryService (validate + convert DTO) → VariantInventoryService (logic kho)
+// availableQty = onHandQty - reservedQty (tính toán, không lưu DB)
+// ============================================================
 @Service
 @RequiredArgsConstructor
 public class InventoryService {
@@ -25,6 +30,7 @@ public class InventoryService {
     private final ProductVariantRepository variantRepository;
     private final VariantInventoryService variantInventoryService;
 
+    // GIỮ KHO khi checkout IN_STOCK. reservedQty TĂNG → availableQty GIẢM.
     @Transactional
     public void reserveStock(Long variantId, int qty) {
         variantRepository.findById(variantId)
@@ -32,6 +38,7 @@ public class InventoryService {
         variantInventoryService.reserveStock(variantId, qty);
     }
 
+    // THẢ KHO khi đơn bị HỦY. reservedQty GIẢM → availableQty TĂNG lại.
     @Transactional
     public void releaseStock(Long variantId, int qty) {
         variantRepository.findById(variantId)
@@ -39,6 +46,7 @@ public class InventoryService {
         variantInventoryService.releaseStock(variantId, qty);
     }
 
+    // XUẤT KHO khi đơn COMPLETED. onHandQty GIẢM + reservedQty GIẢM (hàng thực sự rời kho).
     @Transactional
     public void confirmStock(Long variantId, int qty) {
         variantRepository.findById(variantId)
@@ -66,6 +74,7 @@ public class InventoryService {
         return toLocationDTO(locationRepository.save(location));
     }
 
+    // Điều chỉnh kho thủ công tại 1 Location. onHandDelta dương=nhập kho, âm=xuất kho.
     @Transactional
     public InventoryStockDTO adjustStock(Long locationId, Long variantId, int onHandDelta) {
         InventoryLocation location = locationRepository.findById(locationId)

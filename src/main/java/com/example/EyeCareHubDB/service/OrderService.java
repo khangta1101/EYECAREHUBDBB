@@ -41,6 +41,10 @@ import com.example.EyeCareHubDB.service.FulfillmentService;
 
 import lombok.RequiredArgsConstructor;
 
+// ============================================================
+// SERVICE: OrderService — Quản lý toàn bộ vòng đời đơn hàng.
+// OrderType: IN_STOCK (hàng có sẵn), PREORDER (đặt trước), PRESCRIPTION (kính thuốc)
+// ============================================================
 @Service
 @RequiredArgsConstructor
 public class OrderService {
@@ -53,6 +57,10 @@ public class OrderService {
     private final InventoryService inventoryService;
     private final FulfillmentService fulfillmentService;
 
+    // ⭐ STATE MACHINE: Quy định các chuyển trạng thái hợp lệ
+    // NEW→CONFIRMED/PROCESSING/AWAITING_STOCK/LAB_PROCESSING/CANCELLED
+    // CONFIRMED→PROCESSING/AWAITING_STOCK/LAB_PROCESSING/CANCELLED
+    // PROCESSING→SHIPPED/CANCELLED | SHIPPED→COMPLETED | COMPLETED→REFUNDED
     // Valid status transitions
     private static final Map<OrderStatus, EnumSet<OrderStatus>> VALID_TRANSITIONS;
     static {
@@ -69,6 +77,10 @@ public class OrderService {
     }
 
 
+    // ⭐ CHECKOUT: Tạo đơn hàng từ giỏ hàng
+    // subtotal = tổng(unitPriceSnap × qty) | grandTotal = subtotal - discount + shippingFee (30.000đ)
+    // IN_STOCK → gọi inventoryService.reserveStock() → GIỮ KHO ngay lúc checkout
+    // Sau khi lưu Order → markCartOrdered() → Cart chuyển ORDERED
     @Transactional
     public OrderDTO checkout(com.example.EyeCareHubDB.dto.CheckoutRequest request) {
         Long customerId = request.getCustomerId();
@@ -172,6 +184,9 @@ public class OrderService {
         return toDTO(saved);
     }
 
+    // Cập nhật trạng thái đơn hàng theo State Machine.
+    // CANCELLED → releaseStock() (trả kho) | COMPLETED → confirmStock() (xuất kho)
+    // CONFIRMED/PROCESSING/AWAITING_STOCK/LAB_PROCESSING → tạo FulfillmentTask tự động
     @Transactional
     public OrderDTO updateStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)

@@ -17,12 +17,18 @@ import lombok.RequiredArgsConstructor;
 
 import com.example.EyeCareHubDB.dto.PromotionDTO;
 
+// ============================================================
+// SERVICE: PromotionService — Quản lý mã giảm giá (voucher/coupon).
+// DiscountType: PERCENTAGE (giảm %) | FIXED_AMOUNT (giảm số tiền cố định) | FREE_SHIPPING (miễn phí ship)
+// Luồng: validateCode() kiểm tra mã → calculateDiscount() tính tiền giảm → áp vào grandTotal
+// ============================================================
 @Service
 @RequiredArgsConstructor
 public class PromotionService {
 
     private final PromotionRepository promotionRepository;
 
+    // Tự sinh mã duy nhất "PRM-XXXXXXXX" nếu không có mã khi tạo khuyến mãi
     private String generateUniqueCode() {
         String code;
         do {
@@ -31,6 +37,8 @@ public class PromotionService {
         return code;
     }
 
+    // Kiểm tra mã hợp lệ: còn hạn, isActive=true, subtotal đạt minOrderAmount.
+    // Nếu mã không tồn tại → trả Optional.empty(). Nếu vi phạm → ném lỗi rõ ràng.
     public Optional<Promotion> validateCode(String code, BigDecimal orderSubtotal) {
         Optional<Promotion> promoOpt = promotionRepository.findByCodeAndIsActiveTrue(code);
         if (promoOpt.isEmpty()) {
@@ -51,6 +59,8 @@ public class PromotionService {
         return Optional.of(promo);
     }
 
+    // Tính số tiền giảm. PERCENTAGE: subtotal×value%. FIXED_AMOUNT: giảm cố định. FREE_SHIPPING: giảm =shippingFee.
+    // Giới hạn: discount <= maxDiscount và discount <= subtotal (tránh tiền âm)
     public BigDecimal calculateDiscount(Promotion promo, BigDecimal subtotal, BigDecimal shippingFee) {
         BigDecimal val = promo.getDiscountValue() != null ? promo.getDiscountValue() : BigDecimal.ZERO;
         BigDecimal discount = BigDecimal.ZERO;
@@ -75,6 +85,7 @@ public class PromotionService {
         return promotionRepository.save(promotion);
     }
 
+    // Lấy tất cả khuyến mãi đang hoạt động (isActive=true và trong thời gian hiệu lực)
     public Page<Promotion> getAllActivePromotions(Pageable pageable) {
         LocalDateTime now = LocalDateTime.now();
         return promotionRepository.findByIsActiveTrueAndStartAtBeforeAndEndAtAfter(now, now, pageable);

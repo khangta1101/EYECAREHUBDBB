@@ -23,6 +23,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 
+// ============================================================
+// SERVICE: VnPayService — Xử lý kỹ thuật tich hợp cổng thanh toán VNPay.
+// buildPaymentUrl()  → Tạo URL thanh toán có chữ ký HMAC-SHA512
+// validateSignature() → Xác minh chữ ký callback từ VNPay (chống giả mạo)
+// Chuẩn: VNPay 2.1.0. Mã hóa: URLEncode %20 cho khoảng trắng, HEX HOA.
+// ============================================================
 @Service
 @RequiredArgsConstructor
 public class VnPayService {
@@ -32,6 +38,9 @@ public class VnPayService {
     private final VnPayProperties vnPayProperties;
 
     // ================= CREATE PAYMENT URL =================
+    // Tạo URL thanh toán VNPay. Các params sắp xếp theo TreeMap (alphabetical).
+    // ⭐ Chữ ký HMAC-SHA512: hash toàn bộ params (key=value) sau khi URL-encode.
+    // IP "127.0.0.1" hoặc "::1" → tự thay bằng IP thực để VNPay chấp nhận.
     public String buildPaymentUrl(Payment payment, String clientIp, String orderInfo, String customReturnUrl) {
         validateConfig();
 
@@ -112,6 +121,8 @@ public class VnPayService {
     // integrated into buildPaymentUrl for consistency.
 
     // ================= VALIDATE SIGNATURE =================
+    // Xác minh chữ ký từ VNPay callback. Loại bỏ vnp_SecureHash rồi tính lại và so sánh.
+    // Nếu chữ ký sai → callback có thể bị giả mạo, từ chối xử lý.
     public boolean validateSignature(Map<String, String> params) {
         try {
             String vnpSecureHash = params.get("vnp_SecureHash");
@@ -186,6 +197,7 @@ public class VnPayService {
     }
 
     // ================= ENCODE =================
+    // URLEncode theo chuẩn VNPay 2.1.0: '+' → '%20', hex HEX HOA (ví dụ: %2F chứ không %2f)
     private String encode(String value) {
         try {
             if (value == null)
@@ -215,6 +227,7 @@ public class VnPayService {
     }
 
     // ================= HASH =================
+    // HMAC-SHA512: mã hóa key + data, trả về chuỗi hex HEX HOA (64 byte = 128 ký tự)
     private String hmacSha512(String key, String data) {
         try {
             Mac hmac = Mac.getInstance("HmacSHA512");

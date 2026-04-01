@@ -20,6 +20,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// ============================================================
+// ENTITY: Payment — Thông tin thanh toán cho 1 đơn hàng.
+// 1 Order có thể có nhiều Payment (thanh toán cọc + trả nốt).
+// transactionRef: mã giao dịch VNPay ("VNP" + paymentId + timestamp), duy nhất.
+// rawResponseJson: lưu toàn bộ response từ VNPay để đối soát sau.
+// PaymentPurpose: DEPOSIT=đặt cọc, FINAL=thanh toán đủ, REFUND=hoàn tiền.
+// ============================================================
 @Entity
 @Table(name = "payments")
 @Data
@@ -74,14 +81,17 @@ public class Payment {
         createdAt = LocalDateTime.now();
     }
 
+    // PaymentPurpose: DEPOSIT=thanh toán cọc trước, FINAL=thanh toán toàn bộ, REFUND=hoàn tiền
     public enum PaymentPurpose {
         DEPOSIT, FINAL, REFUND
     }
 
+    // PaymentProvider: VNPAY=online, MOMO=ví điện tử, COD=tiền mặt, BANK_TRANSFER=chuyển khoản
     public enum PaymentProvider {
         VNPAY, MOMO, COD, BANK_TRANSFER
     }
 
+    // PaymentStatus: PENDING=chờ, PAID=đã thanh toán, FAILED=thất bại, REFUNDED=đã hoàn tiền
     public enum PaymentStatus {
         PENDING, PAID, FAILED, REFUNDED
     }

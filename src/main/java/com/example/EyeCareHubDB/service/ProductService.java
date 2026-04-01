@@ -21,11 +21,19 @@ import com.example.EyeCareHubDB.repository.ProductRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
+// ============================================================
+// SERVICE: ProductService — Quản lý toàn bộ nghiệp vụ Sản phẩm.
+// ProductType hợp lệ: FRAME (gọng kính), LENS (tròng kính), SERVICE (dịch vụ)
+// searchTags = slug URL SEO-friendly (ví dụ: "gong-kinh-rayban-classic")
+// SKU = mã sản phẩm duy nhất. Tự sinh nếu không truyền vào.
+// Xóa mềm: isActive=false (dữ liệu vẫn còn trong DB để giữ lịch sử đơn hàng)
+// ============================================================
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class ProductService {
 
+    // Chỉ chấp nhận 3 loại sản phẩm này. Mặc định = FRAME nếu không truyền.
     private static final Set<String> ALLOWED_PRODUCT_TYPES = Set.of("FRAME", "LENS", "SERVICE");
     
     private final ProductRepository productRepository;
@@ -33,6 +41,7 @@ public class ProductService {
     private final ProductVariantService productVariantService;
     private final ProductMediaService productMediaService;
     
+    // Lấy tất cả sản phẩm ACTIVE (isActive=true). Sản phẩm xóa mềm không xuất hiện.
     public List<ProductDTO> getAllProducts() {
         return productRepository.findByIsActiveTrue().stream()
                 .map(this::toDTO)
@@ -45,6 +54,8 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
     }
 
+    // Lấy chi tiết ĐẦY ĐỦ sản phẩm (fullDescription, basePrice, salePrice, viewCount, soldCount).
+    // Dùng cho trang chi tiết sản phẩm trên frontend.
     public ProductDetailResponse getProductDetailById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
@@ -59,6 +70,7 @@ public class ProductService {
         return getProductDetailBySearchTags(slug);
     }
 
+    // Tìm sản phẩm theo searchTags (slug URL). Dùng cho SEO-friendly URL routing.
     public ProductDTO getProductBySearchTags(String searchTags) {
         return productRepository.findBySearchTags(searchTags)
                 .map(this::toDTO)
@@ -77,6 +89,7 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
     
+    // Lấy sản phẩm NỔI BẬT (isFeatured=true). Dùng cho banner trang chủ.
     public List<ProductDTO> getFeaturedProducts(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         return productRepository.findFeaturedProducts(pageable).stream()
@@ -84,6 +97,7 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
     
+    // Lấy sản phẩm PHỔ BIẾN (soldCount cao nhất). Dùng cho section "Bán chạy nhất".
     public List<ProductDTO> getPopularProducts(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         return productRepository.findPopularProducts(pageable).stream()
@@ -91,6 +105,7 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
     
+    // Lấy sản phẩm KHUYẾN MÃI (salePrice < basePrice). Dùng cho section "Đang giảm giá".
     public List<ProductDTO> getProductsOnSale(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         return productRepository.findProductsOnSale(pageable).stream()
@@ -98,6 +113,7 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
     
+    // Tìm kiếm sản phẩm theo từ khóa tên. Có phân trang (page, pageSize).
     public List<ProductDTO> searchProducts(String keyword, int page, int pageSize) {
         Pageable pageable = PageRequest.of(page, pageSize);
         return productRepository.searchByName(keyword, pageable).stream()
@@ -105,6 +121,7 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
     
+    // Tạo sản phẩm mới. searchTags phải unique. SKU tự sinh nếu không có. isActive mặc định = true.
     public ProductDTO createProduct(ProductCreateRequest request) {
         if (request.getSearchTags() != null && !request.getSearchTags().isBlank()
             && productRepository.existsBySearchTags(request.getSearchTags())) {
@@ -134,6 +151,7 @@ public class ProductService {
     
 
     
+    // Cập nhật sản phẩm (partial update — chỉ field nào != null mới cập nhật).
     public ProductDTO updateProduct(Long id, ProductUpdateRequest request) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
@@ -169,6 +187,7 @@ public class ProductService {
         return toDTO(updated);
     }
     
+    // Xóa mềm sản phẩm (isActive=false). Không DELETE khỏi DB vì còn lịch sử đơn hàng.
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
@@ -176,6 +195,7 @@ public class ProductService {
         productRepository.save(product);
     }
     
+    // Chuẩn hóa productType về HOA và kiểm tra hợp lệ. null hoặc rỗng → mặc định "FRAME".
     private String normalizeProductType(String rawType) {
         String productType = rawType;
         if (productType == null || productType.trim().isEmpty()) {
@@ -188,6 +208,7 @@ public class ProductService {
         return productType;
     }
 
+    // Tự sinh SKU: "P-" + 5 ký tự đầu tên + "-" + 4 số ngẫu nhiên. VD: "P-KINHM-4521".
     private String generateProductSku(String name, String providedSku) {
         if (providedSku != null && !providedSku.isBlank() && !providedSku.equalsIgnoreCase("null")) {
             return providedSku.trim().toUpperCase();
@@ -198,6 +219,7 @@ public class ProductService {
         return "P-" + cleanName + "-" + (int)(Math.random() * 9000 + 1000);
     }
     
+    // Convert Product → ProductDTO. Bao gồm media (ảnh) và variants (biến thể).
     private ProductDTO toDTO(Product product) {
         return ProductDTO.builder()
                 .productId(product.getId())
@@ -215,6 +237,8 @@ public class ProductService {
                 .build();
     }
 
+    // Convert Product → ProductDetailResponse (đầy đủ hơn ProductDTO).
+    // Bổ sung: category chi tiết, fullDescription, basePrice, salePrice, viewCount, soldCount.
     private ProductDetailResponse toDetailResponse(Product product) {
         Category category = product.getCategory();
         CategoryDTO categoryDTO = category == null ? null : CategoryDTO.builder()

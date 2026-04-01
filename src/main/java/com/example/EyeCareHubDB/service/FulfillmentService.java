@@ -17,6 +17,17 @@ import com.example.EyeCareHubDB.repository.OrderRepository;
 
 import lombok.RequiredArgsConstructor;
 
+// ============================================================
+// SERVICE: FulfillmentService — Quản lý quy trình hoàn thiện đơn hàng (Fulfillment).
+// TaskType (loại công việc):
+//   CUT_LENS     → Cắt tròng kính theo đơn thuốc
+//   ASSEMBLE     → Lắp ráp kính
+//   QC           → Kiểm tra chất lượng
+//   RECEIVE_PREORDER → Nhận hàng pre-order về kho
+//   PACK         → Đóng gói đơn hàng
+//   SHIP         → Bàn giao cho đơn vị vận chuyển
+// TaskStatus: PENDING → IN_PROGRESS → DONE
+// ============================================================
 @Service
 @RequiredArgsConstructor
 public class FulfillmentService {
@@ -24,6 +35,11 @@ public class FulfillmentService {
     private final FulfillmentTaskRepository taskRepository;
     private final OrderRepository orderRepository;
 
+    // ⭐ TỰ ĐỘNG TẠO TASKS khi đơn được xác nhận (gọi từ PaymentService/OrderService)
+    // Prescription item → CUT_LENS + ASSEMBLE + QC
+    // Pre-order item    → RECEIVE_PREORDER + QC
+    // Mọi đơn           → PACK + SHIP (task chung)
+    // Nếu đã có task rồi → bỏ qua (tránh tạo trùng)
     @Transactional
     public void generateTasksForOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
@@ -60,6 +76,10 @@ public class FulfillmentService {
             .build());
     }
 
+    // Cập nhật task: ghi startedAt khi IN_PROGRESS, doneAt khi DONE.
+    // Nếu DONE và đơn đang LAB_PROCESSING/AWAITING_STOCK:
+    //   → Kiểm tra tất cả prep tasks (CUT_LENS, ASSEMBLE, RECEIVE_PREORDER) DONE chưa
+    //   → Nếu hết → tự động chuyển Order sang PROCESSING
     @Transactional
     public FulfillmentTaskDTO updateTask(Long taskId, TaskStatus status, Long assignedToId, String note) {
         FulfillmentTask task = taskRepository.findById(taskId)
@@ -102,6 +122,8 @@ public class FulfillmentService {
         return toDTO(taskRepository.save(task));
     }
 
+    // Xử lý khi hàng pre-order về kho. Tự động đánh dấu RECEIVE_PREORDER task DONE
+    // và chuyển đơn AWAITING_STOCK → PROCESSING nếu nhận đủ hàng.
     @Transactional
     public void processStockArrival(Long variantId, int qtyReceived) {
         // Find all pending RECEIVE_PREORDER tasks for this variant
@@ -144,6 +166,7 @@ public class FulfillmentService {
             .toList();
     }
 
+    // Lấy task của nhân viên: PENDING → bao gồm cả task chưa ai nhận (unassigned)
     @Transactional(readOnly = true)
     public List<FulfillmentTaskDTO> getMyTasks(Long accountId, TaskStatus status) {
         if (status == TaskStatus.PENDING) {

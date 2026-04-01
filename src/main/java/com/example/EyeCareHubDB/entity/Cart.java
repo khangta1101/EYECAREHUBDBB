@@ -7,6 +7,12 @@ import java.util.List;
 import jakarta.persistence.*;
 import lombok.*;
 
+// ============================================================
+// ENTITY: Cart — Giỏ hàng của khách hàng.
+// CartStatus: ACTIVE=đang dùng, ORDERED=đã checkout thành đơn hàng, ABANDONED=bỏ dở.
+// 1 Customer chỉ có tối đa 1 Cart ACTIVE tại 1 thời điểm.
+// items: cascade ALL + orphanRemoval → xóa Cart → xóa luôn CartItem trong DB.
+// ============================================================
 @Entity
 @Table(name = "carts")
 @Data
@@ -50,6 +56,7 @@ public class Cart {
         updatedAt = LocalDateTime.now();
     }
 
+    // ACTIVE=đang mua sắm, ORDERED=đã tạo đơn hàng, ABANDONED=bỏ giỏ (timeout hoặc bỏ ngang)
     public enum CartStatus {
         ACTIVE, ORDERED, ABANDONED
     }

@@ -21,6 +21,12 @@ import com.example.EyeCareHubDB.repository.ProductVariantRepository;
 
 import lombok.RequiredArgsConstructor;
 
+// ============================================================
+// SERVICE: CartService — Quản lý giỏ hàng (Cart) và sản phẩm trong giỏ (CartItem).
+// CartStatus: ACTIVE (đang dùng) → ORDERED (đã checkout)
+// ⭐ Pre-order: isPreorder=true → BỎ QUA kiểm tra kho (hàng chưa về)
+//              isPreorder=false → BẮT BUỘC kiểm tra kho trước khi thêm
+// ============================================================
 @Service
 @RequiredArgsConstructor
 public class CartService {
@@ -31,6 +37,7 @@ public class CartService {
     private final ProductVariantRepository variantRepository;
     private final VariantInventoryService variantInventoryService;
 
+    // Lấy Cart ACTIVE của customer. Nếu chưa có → tự động tạo mới.
     @Transactional
     public Cart getOrCreateActiveCart(Long customerId) {
         Customer customer = customerRepository.findById(customerId)
@@ -39,6 +46,7 @@ public class CartService {
             .orElseGet(() -> cartRepository.save(Cart.builder().customer(customer).status(CartStatus.ACTIVE).build()));
     }
 
+    // Thêm sản phẩm vào giỏ hàng. unitPriceSnap = snapshot giá tại thời điểm thêm.
     @Transactional
     public CartItemDTO addItem(Long customerId, com.example.EyeCareHubDB.dto.AddToCartRequest request) {
         Long variantId = request.getVariantId();
@@ -59,7 +67,7 @@ public class CartService {
 
         System.out.println("Variant found: " + variant.getVariantName() + " (SKU: " + variant.getSku() + ")");
 
-        // Only check stock if NOT a preorder
+        // ⭐ Chỉ kiểm tra kho nếu KHÔNG phải pre-order
         if (!preOrder && !variantInventoryService.hasAvailableStock(variantId, qty)) {
             throw new RuntimeException("Not enough stock for variant: " + variantId);
         }
@@ -68,14 +76,14 @@ public class CartService {
             ? variant.getSalePrice()
             : variant.getBasePrice();
         
-        // Fallback to Product transient prices if variant prices are null (defensive)
+        // Ưu tiên giá: salePrice variant → basePrice variant → giá product cha
         if (basePrice == null) {
             basePrice = variant.getProduct().getSalePrice() != null
                 ? variant.getProduct().getSalePrice()
                 : variant.getProduct().getBasePrice();
         }
 
-        // Final fallback to zero to avoid NullPointerException
+        // Fallback cuối: tránh NullPointerException khi cả 2 mức giá đều null
         if (basePrice == null) {
             basePrice = BigDecimal.ZERO;
         }
@@ -102,6 +110,7 @@ public class CartService {
             });
     }
 
+    // Cập nhật số lượng. qty <= 0 → XÓA item khỏi giỏ, trả về null.
     @Transactional
     public CartItemDTO updateItem(Long cartItemId, int qty) {
         CartItem item = cartItemRepository.findById(cartItemId)
@@ -115,6 +124,7 @@ public class CartService {
         return toDTO(cartItemRepository.save(item));
     }
 
+    // Xóa 1 sản phẩm khỏi giỏ hàng. Chưa reserve kho nên không cần giải phóng.
     @Transactional
     public void removeItem(Long cartItemId) {
         cartItemRepository.deleteById(cartItemId);
@@ -163,6 +173,7 @@ public class CartService {
         return toDTO(item);
     }
 
+    // Convert Cart → CartDTO. Tự tính subtotal = tổng(unitPriceSnap × qty). itemCount = tổng qty.
     public CartDTO toCartDTO(Cart cart) {
         BigDecimal subtotal = cart.getItems().stream()
             .map(item -> item.getUnitPriceSnap().multiply(BigDecimal.valueOf(item.getQty())))
@@ -196,6 +207,7 @@ public class CartService {
             .build();
     }
 
+    // Đánh dấu Cart → ORDERED sau khi checkout thành công. Cart sẽ không hiển thị nữa.
     @Transactional
     public void markCartOrdered(Cart cart) {
         cart.setStatus(CartStatus.ORDERED);

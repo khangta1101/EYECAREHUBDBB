@@ -25,6 +25,12 @@ import com.example.EyeCareHubDB.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import java.util.stream.Collectors;
 
+// ============================================================
+// SERVICE: PaymentService — Quản lý toàn bộ quy trình thanh toán.
+// Hỗ trợ: VNPAY (online), COD, BANK_TRANSFER.
+// PaymentStatus: PENDING → PAID / FAILED → REFUNDED
+// Luồng VNPay: createVnPayPayment() → redirect → handleVnPayCallback() → updateStatus()
+// ============================================================
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
@@ -34,6 +40,7 @@ public class PaymentService {
     private final VnPayService vnPayService;
     private final FulfillmentService fulfillmentService;
 
+    // Tạo payment thủ công (COD, BANK_TRANSFER). Amount ưu tiên request.amount → grandTotal.
     @Transactional
     public PaymentDTO createPayment(CreatePaymentRequest request) {
         Order order = orderRepository.findById(request.getOrderId())
@@ -55,6 +62,8 @@ public class PaymentService {
         return toDTO(paymentRepository.save(payment));
     }
 
+    // Tạo link thanh toán VNPay. TransactionRef = "VNP" + paymentId + timestamp (unique).
+    // Trả về paymentUrl để frontend redirect khách hàng sang trang VNPay.
     @Transactional
     public VnPayCreatePaymentResponse createVnPayPayment(VnPayCreatePaymentRequest request, String clientIp) {
         if (request == null || request.getOrderId() == null) {
@@ -93,6 +102,12 @@ public class PaymentService {
                 .build();
     }
 
+    // ⭐ Xử lý callback từ VNPay sau khi khách thanh toán.
+    // Bước 1: Lấy vnp_TxnRef → tìm Payment
+    // Bước 2: Xác minh chữ ký HMAC-SHA512 → chống giả mạo
+    // Bước 3: vnp_ResponseCode=00 → PAID, ngược lại → FAILED
+    // Bước 4: Nếu PAID và Order còn NEW → CONFIRMED + tạo FulfillmentTask tự động
+    // Bước 5: Lưu rawResponseJson để đối soát
     @Transactional
     public VnPayCallbackResponse handleVnPayCallback(Map<String, String> queryParams) {
         System.out.println("====== VNPAY CALLBACK DEBUG ======");
@@ -173,6 +188,7 @@ public class PaymentService {
                 .build();
     }
 
+    // Cập nhật trạng thái Payment. Nếu PAID → ghi paidAt + cập nhật Order NEW→CONFIRMED.
     @Transactional
     public PaymentDTO updateStatus(Long paymentId, PaymentStatus newStatus, String transactionRef) {
         Payment payment = paymentRepository.findById(paymentId)
@@ -221,10 +237,12 @@ public class PaymentService {
                 .build();
     }
 
+    // Tạo transactionRef duy nhất: "VNP" + paymentId + currentTimeMillis
     private String buildTransactionRef(Long paymentId) {
         return "VNP" + paymentId + System.currentTimeMillis();
     }
 
+    // Xác nhận thanh toán thủ công theo txnRef (admin confirm). Chỉ chạy nếu chưa PAID.
     @Transactional
     public PaymentDTO confirmPayment(String txnRef) {
 

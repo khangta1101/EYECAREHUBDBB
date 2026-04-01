@@ -6,6 +6,12 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import lombok.*;
 
+// ============================================================
+// ENTITY: Promotion — Mã khuyến mãi (voucher/coupon).
+// DiscountType: PERCENTAGE (giảm %) | FIXED_AMOUNT (giảm cố định) | FREE_SHIPPING (miễn ship)
+// maxDiscount: giới hạn số tiền giảm tối đa (dùng với PERCENTAGE để tránh giảm quá nhiều).
+// minOrderAmount: giá trị đơn tối thiểu để áp dụng mã. ruleJson: cài đặt điều kiện nâng cao (JSON).
+// ============================================================
 @Entity
 @Table(name = "Promotions")
 @Data
@@ -63,10 +69,12 @@ public class Promotion {
         createdAt = LocalDateTime.now();
     }
 
+    // COUPON=phải nhập mã thủ công. AUTO=tự động áp dụng khi đủ điều kiện.
     public enum PromoType {
         COUPON, AUTO
     }
 
+    // PERCENTAGE: discount = subtotal × value%. FIXED_AMOUNT: giảm cố định. FREE_SHIPPING: giảm =shippingFee.
     public enum DiscountType {
         PERCENTAGE, FIXED_AMOUNT, FREE_SHIPPING
     }

@@ -14,6 +14,13 @@ import com.example.EyeCareHubDB.repository.InventoryStockRepository;
 
 import lombok.RequiredArgsConstructor;
 
+// ============================================================
+// SERVICE: VariantInventoryService — Xử lý logic kho chi tiết cho từng ProductVariant.
+// Mỗi variant có thể có tồn kho tại nhiều Location (kho). Service này tổng hợp lại.
+// onHandQty  = số lượng vật lý trong kho
+// reservedQty = số lượng đã bị giữ bởi đơn hàng chưa giao
+// availableQty = onHandQty - reservedQty (có thể bán được)
+// ============================================================
 @Service
 @RequiredArgsConstructor
 public class VariantInventoryService {
@@ -40,6 +47,8 @@ public class VariantInventoryService {
         return getStockSnapshot(variantId).availableQuantity() >= quantity;
     }
 
+    // ⭐ GIỮ KHO: reservedQty TĂNG. Phân bổ theo các Location, mỗi Location một phần
+    // Điều kiện: tổng availableQty phải >= quantity. Nếu không đủ → ném lỗi.
     @Transactional
     public void reserveStock(Long variantId, int quantity) {
         validatePositiveQuantity(quantity);
@@ -70,6 +79,7 @@ public class VariantInventoryService {
         }
     }
 
+    // THẢ KHO: reservedQty GIẢM (khi đơn bị hủy). availableQty tăng lại.
     @Transactional
     public void releaseStock(Long variantId, int quantity) {
         validatePositiveQuantity(quantity);
@@ -97,6 +107,7 @@ public class VariantInventoryService {
         }
     }
 
+    // ⭐ XUẤT KHO: onHandQty GIẢM và reservedQty GIẢM (hàng thực sự rời kho khi giao thành công).
     @Transactional
     public void confirmStock(Long variantId, int quantity) {
         validatePositiveQuantity(quantity);
@@ -163,6 +174,8 @@ public class VariantInventoryService {
         stockRepository.save(stock);
     }
 
+    // Đặt lại onHandQty về giá trị cụ thể (dùng khi admin nhập kho hoặc điều chỉnh sau kiểm kê).
+    // Phase 1: giảm kho không reserved trước. Phase 2: giảm cả reserved nếu vẫn thiếu.
     @Transactional
     public void setTotalStock(ProductVariant variant, int desiredStockQuantity) {
         if (desiredStockQuantity < 0) {
@@ -252,6 +265,7 @@ public class VariantInventoryService {
         }
     }
 
+    // VariantStockSnapshot: record chứa stockQty, reservedQty, và tính availableQty = stock - reserved
     public record VariantStockSnapshot(int stockQuantity, int reservedQuantity) {
         public int availableQuantity() {
             return stockQuantity - reservedQuantity;

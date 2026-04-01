@@ -5,6 +5,13 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import lombok.*;
 
+// ============================================================
+// ENTITY: InventoryStock — Tồn kho của 1 biến thể (variant) tại 1 vị trí kho (location).
+// Khóa chính tổng hợp: (LocationId, VariantId) — @IdClass(InventoryStockId)
+// onHandQty  = số lượng vật lý đang có trong kho
+// reservedQty = số lượng đã bị giữ bởi đơn hàng chưa giao (chưa xuất kho)
+// availableQty = onHandQty - reservedQty (được tính toán, không lưu DB)
+// ============================================================
 @Entity
 @Table(name = "\"InventoryStocks\"")
 @Data
@@ -49,6 +56,7 @@ public class InventoryStock {
         updatedAt = LocalDateTime.now();
     }
 
+    // ⭐ availableQty = onHandQty - reservedQty (hàng có thể bán được ngay)
     public Integer getAvailableQty() {
         return onHandQty - reservedQty;
     }

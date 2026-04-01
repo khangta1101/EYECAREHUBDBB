@@ -14,6 +14,12 @@ import com.example.EyeCareHubDB.repository.ShipmentRepository;
 
 import lombok.RequiredArgsConstructor;
 
+// ============================================================
+// SERVICE: ShipmentService — Quản lý thông tin vận chuyển đơn hàng.
+// ShipmentStatus: CREATED → PICKED_UP → IN_TRANSIT → DELIVERED / RETURNED
+// Mỗi Order có tối đa 1 Shipment (1-1).
+// Thông tin gồm: carrier (hãng ship), trackingNumber (mã vận đơn), trackingUrl.
+// ============================================================
 @Service
 @RequiredArgsConstructor
 public class ShipmentService {
@@ -21,6 +27,7 @@ public class ShipmentService {
     private final ShipmentRepository shipmentRepository;
     private final OrderRepository orderRepository;
 
+    // Tạo Shipment mới cho Order. status khởi tạo = CREATED.
     @Transactional
     public ShipmentDTO createShipment(Long orderId, com.example.EyeCareHubDB.dto.CreateShipmentRequest request) {
         Order order = orderRepository.findById(orderId)
@@ -39,6 +46,7 @@ public class ShipmentService {
         return toDTO(shipmentRepository.save(shipment));
     }
 
+    // Cập nhật trạng thái vận chuyển và tracking info. Partial update (null = giữ nguyên).
     @Transactional
     public ShipmentDTO updateShipment(Long id, String trackingNumber, String trackingUrl, ShipmentStatus status) {
         Shipment shipment = shipmentRepository.findById(id)

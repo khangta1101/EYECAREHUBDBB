@@ -14,6 +14,12 @@ import com.example.EyeCareHubDB.repository.CategoryRepository;
 
 import lombok.RequiredArgsConstructor;
 
+// ============================================================
+// SERVICE: CategoryService — Quản lý danh mục sản phẩm.
+// Cấu trúc cây: root category (parent=null) → sub-category (có parentId)
+// Ví dụ: Gọ Kính (root) → Gọ Kim Loại / Gọ Nhựa (sub)
+// Slug = mã URL duy nhất (VD: "gong-kinh-kimloai")
+// ============================================================
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -39,18 +45,21 @@ public class CategoryService {
                 .orElseThrow(() -> new RuntimeException("Category not found with slug: " + slug));
     }
     
+    // Lấy danh mục gốc (root): không có danh mục cha (parent=null)
     public List<CategoryDTO> getRootCategories() {
         return categoryRepository.findRootCategories().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
     
+    // Lấy danh mục con (sub-category) của 1 danh mục cha
     public List<CategoryDTO> getSubCategories(Long parentId) {
         return categoryRepository.findSubCategories(parentId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
     
+    // Tạo danh mục mới. Slug phải unique. parentId=null → root category.
     public CategoryDTO createCategory(CategoryCreateRequest request) {
         if (categoryRepository.existsBySlug(request.getSlug())) {
             throw new RuntimeException("Category with slug already exists: " + request.getSlug());
@@ -99,6 +108,7 @@ public class CategoryService {
         return toDTO(updated);
     }
     
+    // Xóa mềm danh mục (isActive=false). Không xóa khỏi DB để giữ lịch sử sản phẩm.
     public void deleteCategory(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));

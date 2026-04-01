@@ -8,6 +8,12 @@ import java.util.List;
 import jakarta.persistence.*;
 import lombok.*;
 
+// ============================================================
+// ENTITY: Order — Đơn hàng. Bảng trung tâm của toàn bộ dòng chảy nghiệp vụ.
+// OrderType: IN_STOCK (hàng có sẵn) | PREORDER (đặt trước) | PRESCRIPTION (kính thuốc)
+// grandTotal = subtotal - discountTotal + shippingFee
+// orderNo: mã đơn hàng duy nhất (UUID ngắn). items: cascade ALL (xóa đơn → xóa item)
+// ============================================================
 @Entity
 @Table(name = "Orders")
 @Data
@@ -54,17 +60,21 @@ public class Order {
     @JoinColumn(name = "PromotionId")
     private Promotion promotion;
 
+    // subtotal = tổng tiền hàng (chưa giảm, chưa ship)
     @Column(name = "Subtotal", nullable = false, precision = 12, scale = 2)
     private BigDecimal subtotal;
 
+    // discountTotal = số tiền được giảm từ mã khuyến mãi (0 nếu không có mã)
     @Column(name = "DiscountTotal", nullable = false, precision = 12, scale = 2)
     @Builder.Default
     private BigDecimal discountTotal = BigDecimal.ZERO;
 
+    // shippingFee = phí vận chuyển (mặc định 30.000đ, FREE_SHIPPING → 0)
     @Column(name = "ShippingFee", nullable = false, precision = 10, scale = 2)
     @Builder.Default
     private BigDecimal shippingFee = BigDecimal.ZERO;
 
+    // grandTotal = subtotal - discountTotal + shippingFee (số tiền khách thực trả)
     @Column(name = "GrandTotal", nullable = false, precision = 12, scale = 2)
     private BigDecimal grandTotal;
 
@@ -96,14 +106,19 @@ public class Order {
         updatedAt = LocalDateTime.now();
     }
 
+    // ONLINE=đơn từ web/app. OFFLINE=đơn do nhân viên nhập tay tại cửa hàng.
     public enum Channel {
         ONLINE, OFFLINE
     }
 
+    // Loại đơn: IN_STOCK=kho sẵn, PREORDER=đặt trước hàng chưa về, PRESCRIPTION=kính cắt theo tòa.
     public enum OrderType {
         IN_STOCK, PREORDER, PRESCRIPTION
     }
 
+    // ⭐ STATE MACHINE: NEW→CONFIRMED→PROCESSING→SHIPPED→COMPLETED (trình tự chuẩn)
+    // AWAITING_STOCK: chờ hàng pre-order về. LAB_PROCESSING: đang cắt/lắp kính thuốc.
+    // CANCELLED/REFUNDED: trạng thái kết thúc (không chuyển tiếp và u được).
     public enum OrderStatus {
         NEW, CONFIRMED, PROCESSING, SHIPPED, COMPLETED, CANCELLED, REFUNDED, AWAITING_STOCK, LAB_PROCESSING
     }

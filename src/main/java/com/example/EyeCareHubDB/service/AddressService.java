@@ -14,6 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// ============================================================
+// SERVICE: AddressService — Quản lý địa chỉ giao hàng/thanh toán của khách hàng.
+// Mỗi customer có nhiều địa chỉ, chỉ 1 địa chỉ mặc định (isDefaultShip=true) tại 1 thời điểm.
+// Địa chỉ mặc định tự được áp vào checkout khi khách không chọn thủ công.
+// ============================================================
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -34,12 +39,14 @@ public class AddressService {
                 .orElseThrow(() -> new RuntimeException("Address not found with id: " + id));
     }
     
+    // Lấy địa chỉ MẶC ĐỊNH (isDefaultShip=true). Dùng khi checkout để tự điền địa chỉ giao hàng.
     public AddressDTO getDefaultAddress(Long customerId) {
         return addressRepository.findDefaultAddressByCustomerId(customerId)
                 .map(this::toDTO)
                 .orElseThrow(() -> new RuntimeException("No default address found for customer: " + customerId));
     }
     
+    // Tạo địa chỉ mới. Country mặc định = "Vietnam".
     public AddressDTO createAddress(Long customerId, AddressCreateRequest request) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new RuntimeException("Customer not found with id: " + customerId));
@@ -93,6 +100,8 @@ public class AddressService {
         addressRepository.deleteById(id);
     }
     
+    // Đặt địa chỉ mặc định: bỏ isDefaultShip của địa chỉ cũ, gán true cho địa chỉ mới.
+    // Đảm bảo mỗi customer chỉ có 1 địa chỉ mặc định tại 1 thời điểm.
     public void setDefaultAddress(Long customerId, Long addressId) {
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new RuntimeException("Address not found with id: " + addressId));

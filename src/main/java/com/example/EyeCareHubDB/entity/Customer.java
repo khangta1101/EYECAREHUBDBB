@@ -20,6 +20,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+// ============================================================
+// ENTITY: Customer — Hồ sơ khách hàng (tách biệt với Account đăng nhập).
+// CustomerId = AccountId (khóa chính chia sẻ, không auto-generate).
+// fullName lưu DB. firstName/lastName là @Transient: tính toán từ fullName khi đọc.
+// syncFullName(): gộp firstName+lastName → fullName trước khi lưu DB.
+// splitFullName(): tách fullName → firstName+lastName sau khi đọc từ DB.
+// ============================================================
 @Entity
 @Table(name = "customers")
 @Data

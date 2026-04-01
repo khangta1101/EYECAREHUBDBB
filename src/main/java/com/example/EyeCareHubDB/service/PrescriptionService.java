@@ -10,6 +10,12 @@ import com.example.EyeCareHubDB.repository.PrescriptionRepository;
 
 import lombok.RequiredArgsConstructor;
 
+// ============================================================
+// SERVICE: PrescriptionService — Quản lý đơn thuốc mắt gắn với OrderItem.
+// Mỗi OrderItem có tối đa 1 Prescription (1-1).
+// Prescription gồm: OD (mắt phải), OS (mắt trái), PD (đường đồng tử)
+// Giá trị hợp lệ: Sphere [-20, 20], Cylinder [-6, 6], Axis [0, 180]
+// ============================================================
 @Service
 @RequiredArgsConstructor
 public class PrescriptionService {
@@ -17,6 +23,7 @@ public class PrescriptionService {
     private final PrescriptionRepository prescriptionRepository;
     private final OrderItemRepository orderItemRepository;
 
+    // Tạo đơn thuốc cho OrderItem. Điều kiện: item phải isPrescription=true và chưa có đơn thuốc.
     @Transactional
     public Prescription createPrescription(Long orderItemId, Prescription prescription) {
         OrderItem orderItem = orderItemRepository.findById(orderItemId)
@@ -32,6 +39,7 @@ public class PrescriptionService {
         return prescriptionRepository.save(prescription);
     }
 
+    // Kiểm tra giá trị hợp lệ: Sphere [-20,20], Cylinder [-6,6], Axis [0,180]
     private void validatePrescriptionValues(Prescription p) {
         validateRange(p.getSphereOD(), -20.0, 20.0, "OD Sphere");
         validateRange(p.getSphereOS(), -20.0, 20.0, "OS Sphere");
@@ -63,6 +71,7 @@ public class PrescriptionService {
             .orElseThrow(() -> new RuntimeException("Prescription not found: " + id));
     }
 
+    // Cập nhật đơn thuốc (partial update). Validate giá trị trước khi lưu.
     @Transactional
     public Prescription updatePrescription(Long id, Prescription updated) {
         Prescription existing = prescriptionRepository.findById(id)

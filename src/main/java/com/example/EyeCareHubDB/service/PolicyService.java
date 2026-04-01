@@ -14,6 +14,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 
+// ============================================================
+// SERVICE: PolicyService — Quản lý nội dung chính sách của cửa hàng.
+// PolicyType: RETURN (chuyên bảo hành), PRIVACY (bảo mật), SHIPPING (giao hàng), v.v.
+// slug → tự động sinh từ title (ví dụ: "Chính Sách" → "chinh-sach")
+// isActive=true = PUBLISHED (hiển thị công khai)
+// ============================================================
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -21,6 +27,7 @@ public class PolicyService {
     
     private final PolicyRepository policyRepository;
 
+    // Tự động convert title → slug (URL-friendly, không dấu tiếng Việt, thường hóa, dấu gạch ngang)
     private String toSlug(String input) {
         if (input == null) return "";
         String slug = java.text.Normalizer.normalize(input.toLowerCase(), java.text.Normalizer.Form.NFD);
@@ -36,6 +43,7 @@ public class PolicyService {
                 .map(this::toDTO);
     }
     
+    // Chỉ trả về policy đang PUBLISHED (isActive=true) cho phía khách hàng xem.
     public Page<PolicyDTO> getPublishedPolicies(Pageable pageable) {
         return policyRepository.findPublishedPolicies(pageable)
                 .map(this::toDTO);
@@ -59,6 +67,7 @@ public class PolicyService {
                 .orElseThrow(() -> new RuntimeException("Published policy not found with type: " + type));
     }
     
+    // Tạo policy mới. Slug tự sinh nếu không có. effectiveFrom = lúc tạo (không null).
     public PolicyDTO createPolicy(PolicyCreateRequest request) {
         String slug = (request.getSlug() == null || request.getSlug().isEmpty()) 
                       ? toSlug(request.getTitle()) : request.getSlug();
@@ -110,6 +119,7 @@ public class PolicyService {
         policyRepository.deleteById(id);
     }
     
+    // isActive=true → PUBLISHED (hiển thị công khai trời)
     public void publishPolicy(Long id) {
         Policy policy = policyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Policy not found with id: " + id));
@@ -118,6 +128,7 @@ public class PolicyService {
         policyRepository.save(policy);
     }
     
+    // isActive=false → DRAFT (không hiển thị công khai)
     public void unpublishPolicy(Long id) {
         Policy policy = policyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Policy not found with id: " + id));

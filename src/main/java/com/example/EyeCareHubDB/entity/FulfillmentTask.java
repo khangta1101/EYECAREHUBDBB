@@ -5,6 +5,12 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import lombok.*;
 
+// ============================================================
+// ENTITY: FulfillmentTask — Nhiệm vụ sản xuất/xử lý đơn hàng nội bộ.
+// orderItem có thể null (PACK, SHIP là task chung cho cả đơn).
+// assignedTo: nhân viên được giao việc (null = chưa phân công, ai cũng có thể nhận).
+// startedAt: lúc nhân viên bắt đầu làm. doneAt: lúc hoàn thành.
+// ============================================================
 @Entity
 @Table(name = "FulfillmentTasks")
 @Data
@@ -64,10 +70,12 @@ public class FulfillmentTask {
         updatedAt = LocalDateTime.now();
     }
 
+    // loại nhiệm vụ: RECEIVE_PREORDER=nhận hàng về, CUT_LENS=cắt tròng, ASSEMBLE=lắp ráp, QC=kiểm tra, PACK=đóng gói, SHIP=giao
     public enum TaskType {
         RECEIVE_PREORDER, CUT_LENS, ASSEMBLE, QC, PACK, SHIP
     }
 
+    // TaskStatus: PENDING=chờ, IN_PROGRESS=đang làm, DONE=xong, CANCELLED=hủy bỏ
     public enum TaskStatus {
         PENDING, IN_PROGRESS, DONE, CANCELLED
     }

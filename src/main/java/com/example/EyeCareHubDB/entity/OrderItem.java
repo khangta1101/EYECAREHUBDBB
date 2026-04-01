@@ -6,6 +6,12 @@ import java.time.LocalDateTime;
 import jakarta.persistence.*;
 import lombok.*;
 
+// ============================================================
+// ENTITY: OrderItem — 1 dòng sản phẩm trong đơn hàng.
+// unitPrice = giá tại thời điểm đặt hàng (snapshot). lineTotal = unitPrice × qty.
+// isPrescription=true → item này là kính thuốc, có gắn Prescription (1-1).
+// preorderExpectedAt: ngày dự kiến hàng pre-order về. preorderReceivedAt: ngày thực tế về.
+// ============================================================
 @Entity
 @Table(name = "OrderItems")
 @Data
