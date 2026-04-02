@@ -1,6 +1,7 @@
 package com.example.EyeCareHubDB.service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -18,6 +19,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Transactional
 public class AccountService {
+
+    private static final Set<Account.AccountStatus> DB_ALLOWED_ACCOUNT_STATUSES =
+            Set.of(Account.AccountStatus.ACTIVE, Account.AccountStatus.BLOCKED);
     
     private final AccountRepository accountRepository;
     
@@ -70,7 +74,11 @@ public class AccountService {
             account.setRole(Account.AccountRole.valueOf(request.getRole()));
         }
         if (request.getStatus() != null) {
-            account.setStatus(Account.AccountStatus.valueOf(request.getStatus()));
+            Account.AccountStatus newStatus = Account.AccountStatus.valueOf(request.getStatus());
+            if (!DB_ALLOWED_ACCOUNT_STATUSES.contains(newStatus)) {
+                throw new RuntimeException("Unsupported account status for current DB schema: " + newStatus);
+            }
+            account.setStatus(newStatus);
         }
         
         Account updated = accountRepository.save(account);
@@ -80,8 +88,8 @@ public class AccountService {
     public void deleteAccount(Long id) {
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
-        // Keep soft-delete compatible with current DB status constraint.
-        account.setStatus(Account.AccountStatus.INACTIVE);
+        // Current DB check constraint accepts ACTIVE/BLOCKED only.
+        account.setStatus(Account.AccountStatus.BLOCKED);
         accountRepository.save(account);
     }
     

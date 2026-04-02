@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 // ============================================================
 // ENTITY: Account — Tài khoản đăng nhập hệ thống.
 // AccountRole: CUSTOMER | ADMIN | STAFF | MANAGER | OPERATIONS_STAFF
-// AccountStatus: ACTIVE | INACTIVE | SUSPENDED | DELETED
+// AccountStatus: ACTIVE | BLOCKED | INACTIVE | SUSPENDED | DELETED
 // Mỗi Account có 1 Customer (cấu trúc tách biệt: Account = đậu nhập, Customer = hồ sơ nhân khẩu)
 // phoneNumber, updatedAt, customer: @Transient (không lưu DB)
 // ============================================================
@@ -93,8 +93,9 @@ public class Account {
         CUSTOMER, ADMIN, STAFF, MANAGER, OPERATIONS_STAFF
     }
     
-    // Trạng thái tài khoản: ACTIVE=đang hoạt động, INACTIVE=chưa kích hoạt, SUSPENDED=bị khóa, DELETED=đã xóa
+    // Trạng thái tài khoản: ACTIVE=đang hoạt động, BLOCKED=bị khóa theo schema DB hiện tại,
+    // INACTIVE/SUSPENDED/DELETED giữ lại để tương thích logic cũ.
     public enum AccountStatus {
-        ACTIVE, INACTIVE, SUSPENDED, DELETED
+        ACTIVE, BLOCKED, INACTIVE, SUSPENDED, DELETED
     }
 }
