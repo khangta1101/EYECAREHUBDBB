@@ -80,7 +80,8 @@ public class AccountService {
     public void deleteAccount(Long id) {
         Account account = accountRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Account not found with id: " + id));
-        account.setStatus(Account.AccountStatus.DELETED);
+        // Keep soft-delete compatible with current DB status constraint.
+        account.setStatus(Account.AccountStatus.INACTIVE);
         accountRepository.save(account);
     }
     

@@ -96,8 +96,7 @@ public class AuthenticationService {
             throw new RuntimeException("Invalid password");
         }
         
-        if (account.getStatus() == Account.AccountStatus.DELETED || 
-            account.getStatus() == Account.AccountStatus.SUSPENDED) {
+        if (account.getStatus() != Account.AccountStatus.ACTIVE) {
             throw new RuntimeException("Account is not active");
         }
         
