@@ -2,6 +2,8 @@ package com.example.EyeCareHubDB.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -9,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,10 +48,10 @@ public class FulfillmentController {
         return ResponseEntity.ok(fulfillmentService.updateTask(taskId, status, assignedToId));
     }
 
-    @PostMapping("/tasks/{taskId}/upload-evidence")
+    @PostMapping(value = "/tasks/{taskId}/upload-evidence", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<FulfillmentTask> uploadEvidenceImage(@PathVariable("taskId") Long taskId,
-                                                              @RequestParam("image") MultipartFile imageFile) {
-        return ResponseEntity.ok(fulfillmentService.uploadEvidenceImage(taskId, imageFile));
+                                                              @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(fulfillmentService.uploadEvidenceImage(taskId, file));
     }
 
     @GetMapping("/my-tasks")
