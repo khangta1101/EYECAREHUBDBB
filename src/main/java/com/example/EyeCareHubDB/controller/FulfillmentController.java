@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Fulfillment")
 @RestController
-@RequestMapping("/api/fulfillment")
+@RequestMapping({"/api/fulfillment", "/api/v1/fulfillment", "/fulfillment"})
 @RequiredArgsConstructor
 public class FulfillmentController {
 
