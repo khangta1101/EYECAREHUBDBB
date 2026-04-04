@@ -21,7 +21,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "fulfillment_tasks")
+@Table(name = "FulfillmentTasks")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,44 +29,47 @@ import lombok.NoArgsConstructor;
 public class FulfillmentTask {
 
     @Id
+    @Column(name = "FulfillmentTaskId")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(name = "OrderId", nullable = false)
     private Order order;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_item_id")
+    @JoinColumn(name = "OrderItemId")
     private OrderItem orderItem;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(name = "TaskType", nullable = false, length = 30)
     private TaskType taskType;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "Status", nullable = false, length = 20)
     private TaskStatus status = TaskStatus.PENDING;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_to")
+    @JoinColumn(name = "AssignedTo")
     private Account assignedTo;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "Note", columnDefinition = "TEXT")
     private String note;
 
-    @Column(name = "evidence_image_url", length = 500)
+    @Column(name = "EvidenceImageUrl", length = 500)
     private String evidenceImageUrl;
 
+    @Column(name = "StartedAt")
     private LocalDateTime startedAt;
 
+    @Column(name = "DoneAt")
     private LocalDateTime doneAt;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "CreatedAt", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(nullable = false)
+    @Column(name = "UpdatedAt", nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist

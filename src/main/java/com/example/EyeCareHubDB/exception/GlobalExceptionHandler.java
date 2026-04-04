@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -23,6 +25,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<Map<String, Object>> handleMissingRequestPart(MissingServletRequestPartException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", "Bad Request");
+        body.put("message", "Required part 'file' is not present.");
+        return ResponseEntity.badRequest().body(body);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
         HttpStatus status = ex.getMessage() != null && ex.getMessage().startsWith("Email already registered")
@@ -34,6 +46,17 @@ public class GlobalExceptionHandler {
         body.put("status", status.value());
         body.put("error", status.getReasonPhrase());
         body.put("message", ex.getMessage());
+        return ResponseEntity.status(status).body(body);
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleResponseStatusException(ResponseStatusException ex) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", status.value());
+        body.put("error", status.getReasonPhrase());
+        body.put("message", ex.getReason());
         return ResponseEntity.status(status).body(body);
     }
 }

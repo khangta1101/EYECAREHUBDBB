@@ -1,6 +1,8 @@
 package com.example.EyeCareHubDB.controller;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -49,14 +51,29 @@ public class FulfillmentController {
     }
 
     @PostMapping(value = "/tasks/{taskId}/upload-evidence", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<FulfillmentTask> uploadEvidenceImage(@PathVariable("taskId") Long taskId,
-                                                              @RequestPart("file") MultipartFile file) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(fulfillmentService.uploadEvidenceImage(taskId, file));
+    public ResponseEntity<Map<String, Object>> uploadEvidenceImage(@PathVariable("taskId") Long taskId,
+                                                                    @RequestPart("file") MultipartFile file) {
+        FulfillmentTask task = fulfillmentService.uploadEvidenceImage(taskId, file);
+        return ResponseEntity.status(HttpStatus.CREATED).body(toUploadResponse(task));
     }
 
     @GetMapping("/my-tasks")
     public ResponseEntity<List<FulfillmentTask>> getMyTasks(@RequestParam Long accountId,
                                                              @RequestParam(defaultValue = "PENDING") TaskStatus status) {
         return ResponseEntity.ok(fulfillmentService.getMyTasks(accountId, status));
+    }
+
+    private Map<String, Object> toUploadResponse(FulfillmentTask task) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("id", task.getId());
+        body.put("taskType", task.getTaskType() != null ? task.getTaskType().name() : null);
+        body.put("status", task.getStatus() != null ? task.getStatus().name() : null);
+        body.put("note", task.getNote());
+        body.put("evidenceImageUrl", task.getEvidenceImageUrl());
+        body.put("startedAt", task.getStartedAt());
+        body.put("doneAt", task.getDoneAt());
+        body.put("createdAt", task.getCreatedAt());
+        body.put("updatedAt", task.getUpdatedAt());
+        return body;
     }
 }

@@ -3,9 +3,11 @@ package com.example.EyeCareHubDB.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.EyeCareHubDB.entity.Account;
 import com.example.EyeCareHubDB.entity.FulfillmentTask;
@@ -70,12 +72,18 @@ public class FulfillmentService {
     @Transactional
     public FulfillmentTask uploadEvidenceImage(Long taskId, MultipartFile imageFile) {
         FulfillmentTask task = taskRepository.findById(taskId)
-            .orElseThrow(() -> new RuntimeException("Task not found: " + taskId));
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found: " + taskId));
 
-        if (imageFile != null && !imageFile.isEmpty()) {
+        if (imageFile == null || imageFile.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Please select a file to upload");
+        }
+
+        try {
             String imageUrl = fileService.saveFile(imageFile, "fulfillment-evidence");
             task.setEvidenceImageUrl(imageUrl);
             taskRepository.save(task);
+        } catch (RuntimeException ex) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not upload evidence image", ex);
         }
 
         return task;
