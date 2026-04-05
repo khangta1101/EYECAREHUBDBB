@@ -5,8 +5,25 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 // ============================================================
 // ENTITY: Order — Đơn hàng. Bảng trung tâm của toàn bộ dòng chảy nghiệp vụ.
@@ -118,8 +135,9 @@ public class Order {
 
     // ⭐ STATE MACHINE: NEW→CONFIRMED→PROCESSING→SHIPPED→COMPLETED (trình tự chuẩn)
     // AWAITING_STOCK: chờ hàng pre-order về. LAB_PROCESSING: đang cắt/lắp kính thuốc.
+    // WAITING_STOCK: giá trị legacy cũ trong DB, giữ để tương thích dữ liệu cũ.
     // CANCELLED/REFUNDED: trạng thái kết thúc (không chuyển tiếp và u được).
     public enum OrderStatus {
-        NEW, CONFIRMED, PROCESSING, SHIPPED, COMPLETED, CANCELLED, REFUNDED, AWAITING_STOCK, LAB_PROCESSING
+        NEW, CONFIRMED, PROCESSING, SHIPPED, COMPLETED, CANCELLED, REFUNDED, AWAITING_STOCK, WAITING_STOCK, LAB_PROCESSING
     }
 }

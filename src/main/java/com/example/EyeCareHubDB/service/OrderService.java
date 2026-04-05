@@ -37,7 +37,6 @@ import com.example.EyeCareHubDB.entity.Promotion;
 import com.example.EyeCareHubDB.repository.AddressRepository;
 import com.example.EyeCareHubDB.repository.CustomerRepository;
 import com.example.EyeCareHubDB.repository.OrderRepository;
-import com.example.EyeCareHubDB.service.FulfillmentService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -65,9 +64,10 @@ public class OrderService {
     private static final Map<OrderStatus, EnumSet<OrderStatus>> VALID_TRANSITIONS;
     static {
         VALID_TRANSITIONS = new HashMap<>();
-        VALID_TRANSITIONS.put(OrderStatus.NEW,        EnumSet.of(OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.AWAITING_STOCK, OrderStatus.LAB_PROCESSING, OrderStatus.CANCELLED));
-        VALID_TRANSITIONS.put(OrderStatus.CONFIRMED,  EnumSet.of(OrderStatus.PROCESSING, OrderStatus.AWAITING_STOCK, OrderStatus.LAB_PROCESSING, OrderStatus.CANCELLED));
+        VALID_TRANSITIONS.put(OrderStatus.NEW,        EnumSet.of(OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.AWAITING_STOCK, OrderStatus.WAITING_STOCK, OrderStatus.LAB_PROCESSING, OrderStatus.CANCELLED));
+        VALID_TRANSITIONS.put(OrderStatus.CONFIRMED,  EnumSet.of(OrderStatus.PROCESSING, OrderStatus.AWAITING_STOCK, OrderStatus.WAITING_STOCK, OrderStatus.LAB_PROCESSING, OrderStatus.CANCELLED));
         VALID_TRANSITIONS.put(OrderStatus.AWAITING_STOCK, EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
+        VALID_TRANSITIONS.put(OrderStatus.WAITING_STOCK, EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
         VALID_TRANSITIONS.put(OrderStatus.LAB_PROCESSING, EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
         VALID_TRANSITIONS.put(OrderStatus.PROCESSING, EnumSet.of(OrderStatus.SHIPPED, OrderStatus.CANCELLED));
         VALID_TRANSITIONS.put(OrderStatus.SHIPPED,    EnumSet.of(OrderStatus.COMPLETED));
@@ -208,7 +208,7 @@ public class OrderService {
                 inventoryService.confirmStock(i.getVariant().getId(), i.getQty()));
         }
         if (newStatus == OrderStatus.CONFIRMED || newStatus == OrderStatus.PROCESSING 
-            || newStatus == OrderStatus.AWAITING_STOCK || newStatus == OrderStatus.LAB_PROCESSING) {
+            || newStatus == OrderStatus.AWAITING_STOCK || newStatus == OrderStatus.WAITING_STOCK || newStatus == OrderStatus.LAB_PROCESSING) {
             fulfillmentService.generateTasksForOrder(orderId);
         }
         order.setStatus(newStatus);
@@ -223,17 +223,31 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public Page<OrderDTO> getOrdersByCustomer(Long customerId, Pageable pageable) {
+    public Page<OrderDTO> getOrdersByCustomer(Long customerId, OrderStatus status, Pageable pageable) {
         Customer customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
-        return orderRepository.findByCustomerOrderByCreatedAtDesc(customer, pageable)
+        Page<Order> ordersPage = status != null
+            ? orderRepository.findByCustomerAndStatusOrderByCreatedAtDesc(customer, status, pageable)
+            : orderRepository.findByCustomerOrderByCreatedAtDesc(customer, pageable);
+        return ordersPage
             .map(this::toDTO);
     }
 
     @Transactional(readOnly = true)
-    public Page<OrderDTO> getAllOrders(Pageable pageable) {
-        return orderRepository.findAll(pageable)
+    public Page<OrderDTO> getAllOrders(OrderStatus status, Pageable pageable) {
+        Page<Order> ordersPage = status != null
+            ? orderRepository.findByStatusOrderByCreatedAtDesc(status, pageable)
+            : orderRepository.findAll(pageable);
+        return ordersPage
             .map(this::toDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getOrderStatuses() {
+        return java.util.Arrays.stream(OrderStatus.values())
+            .filter(s -> s != OrderStatus.WAITING_STOCK)
+            .map(Enum::name)
+            .toList();
     }
 
     private OrderDTO toDTO(Order order) {
@@ -246,7 +260,7 @@ public class OrderService {
             .salesStaff(toAccountDTO(order.getSalesStaff()))
             .channel(order.getChannel() != null ? order.getChannel().name() : null)
             .orderType(order.getOrderType() != null ? order.getOrderType().name() : null)
-            .status(order.getStatus() != null ? order.getStatus().name() : null)
+            .status(normalizeOrderStatus(order.getStatus()))
             .promotion(toPromotionDTO(order.getPromotion()))
             .subtotal(order.getSubtotal())
             .discountTotal(order.getDiscountTotal())
@@ -257,6 +271,16 @@ public class OrderService {
             .payments(order.getPayments() != null ? order.getPayments().stream().map(this::toPaymentDTO).collect(Collectors.toList()) : null)
             .createdAt(order.getCreatedAt())
             .build();
+    }
+
+    private String normalizeOrderStatus(OrderStatus status) {
+        if (status == null) {
+            return null;
+        }
+        if (status == OrderStatus.WAITING_STOCK) {
+            return OrderStatus.AWAITING_STOCK.name();
+        }
+        return status.name();
     }
 
     private PaymentDTO toPaymentDTO(com.example.EyeCareHubDB.entity.Payment p) {

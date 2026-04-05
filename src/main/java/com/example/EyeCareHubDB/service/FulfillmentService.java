@@ -116,7 +116,9 @@ public class FulfillmentService {
                 
                 // If this was a prescription/preorder task, check if the whole order can move to PROCESSING
                 Order order = task.getOrder();
-                if (order.getStatus() == Order.OrderStatus.LAB_PROCESSING || order.getStatus() == Order.OrderStatus.AWAITING_STOCK) {
+                if (order.getStatus() == Order.OrderStatus.LAB_PROCESSING
+                    || order.getStatus() == Order.OrderStatus.AWAITING_STOCK
+                    || order.getStatus() == Order.OrderStatus.WAITING_STOCK) {
                     boolean allPrepDone = taskRepository.findByOrderIdOrderByCreatedAtAsc(order.getId()).stream()
                         .filter(t -> t.getTaskType() == TaskType.CUT_LENS || t.getTaskType() == TaskType.ASSEMBLE || t.getTaskType() == TaskType.RECEIVE_PREORDER)
                         .allMatch(t -> t.getStatus() == TaskStatus.DONE);
@@ -186,7 +188,8 @@ public class FulfillmentService {
 
                 // After receiving stock, check if order can move from AWAITING_STOCK to PROCESSING
                 Order order = t.getOrder();
-                if (order.getStatus() == Order.OrderStatus.AWAITING_STOCK) {
+                if (order.getStatus() == Order.OrderStatus.AWAITING_STOCK
+                    || order.getStatus() == Order.OrderStatus.WAITING_STOCK) {
                     boolean allReceived = order.getItems().stream()
                         .filter(item -> item.getPreorderExpectedAt() != null)
                         .allMatch(item -> taskRepository.findByTaskTypeAndStatus(TaskType.RECEIVE_PREORDER, TaskStatus.DONE).stream()

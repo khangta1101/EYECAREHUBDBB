@@ -68,11 +68,8 @@ public class FulfillmentController {
     @PatchMapping(value = "/tasks/{taskId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<FulfillmentTaskDTO> uploadEvidence(
             @PathVariable("taskId") Long taskId,
-            @RequestPart("file") MultipartFile file,
-            @RequestParam(value = "status", required = false) TaskStatus status,
-            @RequestParam(value = "assignedToId", required = false) Long assignedToId,
-            @RequestParam(value = "note", required = false) String note) {
-        return ResponseEntity.ok(fulfillmentService.updateTask(taskId, status, assignedToId, note, List.of(file)));
+            @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(fulfillmentService.updateTask(taskId, null, null, null, List.of(file)));
     }
 
     @GetMapping("/my-tasks")
