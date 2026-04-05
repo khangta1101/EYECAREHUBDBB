@@ -21,6 +21,7 @@ public class FulfillmentTaskDTO {
     private Long assignedToId;
     private String assignedToEmail;
     private String note;
+    private String evidenceUrls;
     private String productName;
     private String variantName;
     private LocalDateTime startedAt;

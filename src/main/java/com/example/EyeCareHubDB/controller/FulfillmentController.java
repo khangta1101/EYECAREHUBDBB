@@ -1,16 +1,24 @@
 package com.example.EyeCareHubDB.controller;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
-
 import java.util.List;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.EyeCareHubDB.dto.FulfillmentTaskDTO;
 import com.example.EyeCareHubDB.entity.FulfillmentTask.TaskStatus;
 import com.example.EyeCareHubDB.service.FulfillmentService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 @Tag(name = "Fulfillment")
@@ -38,6 +46,16 @@ public class FulfillmentController {
                                                        @RequestParam(value = "assignedToId", required = false) Long assignedToId,
                                                        @RequestParam(value = "note", required = false) String note) {
         return ResponseEntity.ok(fulfillmentService.updateTask(taskId, status, assignedToId, note));
+    }
+
+    @PatchMapping(value = "/tasks/{taskId}/with-evidence", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<FulfillmentTaskDTO> updateTaskWithEvidence(
+            @PathVariable("taskId") Long taskId,
+            @RequestParam(value = "status", required = false) TaskStatus status,
+            @RequestParam(value = "assignedToId", required = false) Long assignedToId,
+            @RequestParam(value = "note", required = false) String note,
+            @RequestPart(value = "evidenceFiles", required = false) List<MultipartFile> evidenceFiles) {
+        return ResponseEntity.ok(fulfillmentService.updateTask(taskId, status, assignedToId, note, evidenceFiles));
     }
 
     @GetMapping("/my-tasks")

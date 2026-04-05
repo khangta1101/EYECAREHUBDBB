@@ -47,6 +47,9 @@ public class FulfillmentTask {
     @Column(name = "\"Note\"", columnDefinition = "TEXT")
     private String note;
 
+    @Column(name = "\"EvidenceUrls\"", columnDefinition = "TEXT")
+    private String evidenceUrls;
+
     @Column(name = "\"StartedAt\"")
     private LocalDateTime startedAt;
 

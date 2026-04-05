@@ -1,10 +1,14 @@
 package com.example.EyeCareHubDB.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.EyeCareHubDB.dto.FulfillmentTaskDTO;
 import com.example.EyeCareHubDB.entity.Account;
@@ -34,6 +38,7 @@ public class FulfillmentService {
 
     private final FulfillmentTaskRepository taskRepository;
     private final OrderRepository orderRepository;
+    private final FileService fileService;
 
     // ⭐ TỰ ĐỘNG TẠO TASKS khi đơn được xác nhận (gọi từ PaymentService/OrderService)
     // Prescription item → CUT_LENS + ASSEMBLE + QC
@@ -82,8 +87,17 @@ public class FulfillmentService {
     //   → Nếu hết → tự động chuyển Order sang PROCESSING
     @Transactional
     public FulfillmentTaskDTO updateTask(Long taskId, TaskStatus status, Long assignedToId, String note) {
+        return updateTask(taskId, status, assignedToId, note, null);
+    }
+
+    @Transactional
+    public FulfillmentTaskDTO updateTask(Long taskId, TaskStatus status, Long assignedToId, String note, List<MultipartFile> evidenceFiles) {
         FulfillmentTask task = taskRepository.findById(taskId)
             .orElseThrow(() -> new RuntimeException("Task not found: " + taskId));
+
+        if (evidenceFiles != null && !evidenceFiles.isEmpty()) {
+            task.setEvidenceUrls(uploadAndMergeEvidence(task, evidenceFiles));
+        }
         
         if (status != null) {
             task.setStatus(status);
@@ -95,6 +109,9 @@ public class FulfillmentService {
                 }
             }
             if (status == TaskStatus.DONE) {
+                if (task.getEvidenceUrls() == null || task.getEvidenceUrls().isBlank()) {
+                    throw new RuntimeException("Fulfillment evidence images are required before setting task to DONE");
+                }
                 task.setDoneAt(LocalDateTime.now());
                 
                 // If this was a prescription/preorder task, check if the whole order can move to PROCESSING
@@ -116,10 +133,35 @@ public class FulfillmentService {
             task.setNote(note);
         }
         
-        if (assignedToId != null && task.getAssignedTo() == null) {
+        if (assignedToId != null) {
             task.setAssignedTo(Account.builder().id(assignedToId).build());
         }
         return toDTO(taskRepository.save(task));
+    }
+
+    private String uploadAndMergeEvidence(FulfillmentTask task, List<MultipartFile> evidenceFiles) {
+        List<String> uploadedUrls = new ArrayList<>();
+        for (MultipartFile file : evidenceFiles) {
+            if (file != null && !file.isEmpty()) {
+                uploadedUrls.add(fileService.saveFile(file, "fulfillment-evidence/task-" + task.getId()));
+            }
+        }
+
+        if (uploadedUrls.isEmpty()) {
+            return task.getEvidenceUrls();
+        }
+
+        Set<String> merged = new LinkedHashSet<>();
+        if (task.getEvidenceUrls() != null && !task.getEvidenceUrls().isBlank()) {
+            for (String existing : task.getEvidenceUrls().split(",")) {
+                String normalized = existing.trim();
+                if (!normalized.isEmpty()) {
+                    merged.add(normalized);
+                }
+            }
+        }
+        merged.addAll(uploadedUrls);
+        return String.join(",", merged);
     }
 
     // Xử lý khi hàng pre-order về kho. Tự động đánh dấu RECEIVE_PREORDER task DONE
@@ -192,6 +234,7 @@ public class FulfillmentService {
             .assignedToId(task.getAssignedTo() != null ? task.getAssignedTo().getId() : null)
             .assignedToEmail(task.getAssignedTo() != null ? task.getAssignedTo().getEmail() : null)
             .note(task.getNote())
+            .evidenceUrls(task.getEvidenceUrls())
             .productName(task.getOrderItem() != null ? task.getOrderItem().getVariant().getProduct().getName() : null)
             .variantName(task.getOrderItem() != null ? task.getOrderItem().getVariant().getVariantName() : null)
             .startedAt(task.getStartedAt())
