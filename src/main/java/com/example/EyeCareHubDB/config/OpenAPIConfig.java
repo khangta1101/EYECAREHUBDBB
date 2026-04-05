@@ -17,11 +17,6 @@ public class OpenAPIConfig {
         localServer.setUrl("http://localhost:8080");
         localServer.setDescription("Server Localhost");
 
-        Server productionServer = new Server();
-        // Nhớ thay đường link này thành đường link thật của Railway của bạn
-        productionServer.setUrl("https://eyecarehubdbb-production.up.railway.app");
-        productionServer.setDescription("Server Production (Railway)");
-
-        return new OpenAPI().servers(List.of(localServer, productionServer));
+        return new OpenAPI().servers(List.of(localServer));
     }
 }
