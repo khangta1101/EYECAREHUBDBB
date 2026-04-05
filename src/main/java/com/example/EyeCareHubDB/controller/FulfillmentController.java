@@ -65,7 +65,7 @@ public class FulfillmentController {
                 combineEvidenceFiles(file, evidenceFiles)));
     }
 
-    @PatchMapping(value = "/tasks/{taskId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/tasks/{taskId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<FulfillmentTaskDTO> uploadEvidence(
             @PathVariable("taskId") Long taskId,
             @RequestPart("file") MultipartFile file) {

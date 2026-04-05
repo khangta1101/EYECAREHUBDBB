@@ -1,7 +1,6 @@
 package com.example.EyeCareHubDB.service;
 
 import java.math.BigDecimal;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,27 +54,6 @@ public class OrderService {
     private final PromotionService promotionService;
     private final InventoryService inventoryService;
     private final FulfillmentService fulfillmentService;
-
-    // ⭐ STATE MACHINE: Quy định các chuyển trạng thái hợp lệ
-    // NEW→CONFIRMED/PROCESSING/AWAITING_STOCK/LAB_PROCESSING/CANCELLED
-    // CONFIRMED→PROCESSING/AWAITING_STOCK/LAB_PROCESSING/CANCELLED
-    // PROCESSING→SHIPPED/CANCELLED | SHIPPED→COMPLETED | COMPLETED→REFUNDED
-    // Valid status transitions
-    private static final Map<OrderStatus, EnumSet<OrderStatus>> VALID_TRANSITIONS;
-    static {
-        VALID_TRANSITIONS = new HashMap<>();
-        VALID_TRANSITIONS.put(OrderStatus.NEW,        EnumSet.of(OrderStatus.CONFIRMED, OrderStatus.PROCESSING, OrderStatus.AWAITING_STOCK, OrderStatus.WAITING_STOCK, OrderStatus.LAB_PROCESSING, OrderStatus.CANCELLED));
-        VALID_TRANSITIONS.put(OrderStatus.CONFIRMED,  EnumSet.of(OrderStatus.PROCESSING, OrderStatus.AWAITING_STOCK, OrderStatus.WAITING_STOCK, OrderStatus.LAB_PROCESSING, OrderStatus.CANCELLED));
-        VALID_TRANSITIONS.put(OrderStatus.AWAITING_STOCK, EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
-        VALID_TRANSITIONS.put(OrderStatus.WAITING_STOCK, EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
-        VALID_TRANSITIONS.put(OrderStatus.LAB_PROCESSING, EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
-        VALID_TRANSITIONS.put(OrderStatus.PROCESSING, EnumSet.of(OrderStatus.SHIPPED, OrderStatus.CANCELLED));
-        VALID_TRANSITIONS.put(OrderStatus.SHIPPED,    EnumSet.of(OrderStatus.COMPLETED));
-        VALID_TRANSITIONS.put(OrderStatus.COMPLETED,  EnumSet.of(OrderStatus.REFUNDED));
-        VALID_TRANSITIONS.put(OrderStatus.CANCELLED,  EnumSet.noneOf(OrderStatus.class));
-        VALID_TRANSITIONS.put(OrderStatus.REFUNDED,   EnumSet.noneOf(OrderStatus.class));
-    }
-
 
     // ⭐ CHECKOUT: Tạo đơn hàng từ giỏ hàng
     // subtotal = tổng(unitPriceSnap × qty) | grandTotal = subtotal - discount + shippingFee (30.000đ)
@@ -184,20 +162,15 @@ public class OrderService {
         return toDTO(saved);
     }
 
-    // Cập nhật trạng thái đơn hàng theo State Machine.
+    // Cập nhật trạng thái đơn hàng, không ép theo thứ tự trạng thái.
     // CANCELLED → releaseStock() (trả kho) | COMPLETED → confirmStock() (xuất kho)
     // CONFIRMED/PROCESSING/AWAITING_STOCK/LAB_PROCESSING → tạo FulfillmentTask tự động
     @Transactional
     public OrderDTO updateStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
-        OrderStatus current = order.getStatus();
-        EnumSet<OrderStatus> allowed = VALID_TRANSITIONS.getOrDefault(current, EnumSet.noneOf(OrderStatus.class));
-        if (newStatus == current) {
+        if (newStatus == order.getStatus()) {
             return toDTO(order);
-        }
-        if (!allowed.contains(newStatus)) {
-            throw new RuntimeException("Cannot transition from " + current + " to " + newStatus);
         }
         if (newStatus == OrderStatus.CANCELLED) {
             order.getItems().forEach(i ->
