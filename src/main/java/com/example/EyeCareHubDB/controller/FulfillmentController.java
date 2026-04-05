@@ -1,5 +1,6 @@
 package com.example.EyeCareHubDB.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.http.MediaType;
@@ -54,8 +55,24 @@ public class FulfillmentController {
             @RequestParam(value = "status", required = false) TaskStatus status,
             @RequestParam(value = "assignedToId", required = false) Long assignedToId,
             @RequestParam(value = "note", required = false) String note,
+            @RequestPart(value = "file", required = false) MultipartFile file,
             @RequestPart(value = "evidenceFiles", required = false) List<MultipartFile> evidenceFiles) {
-        return ResponseEntity.ok(fulfillmentService.updateTask(taskId, status, assignedToId, note, evidenceFiles));
+        return ResponseEntity.ok(fulfillmentService.updateTask(
+                taskId,
+                status,
+                assignedToId,
+                note,
+                combineEvidenceFiles(file, evidenceFiles)));
+    }
+
+    @PatchMapping(value = "/tasks/{taskId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<FulfillmentTaskDTO> uploadEvidence(
+            @PathVariable("taskId") Long taskId,
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(value = "status", required = false) TaskStatus status,
+            @RequestParam(value = "assignedToId", required = false) Long assignedToId,
+            @RequestParam(value = "note", required = false) String note) {
+        return ResponseEntity.ok(fulfillmentService.updateTask(taskId, status, assignedToId, note, List.of(file)));
     }
 
     @GetMapping("/my-tasks")
@@ -69,5 +86,20 @@ public class FulfillmentController {
                                                    @RequestParam("qty") int qty) {
         fulfillmentService.processStockArrival(variantId, qty);
         return ResponseEntity.ok().build();
+    }
+
+    private List<MultipartFile> combineEvidenceFiles(MultipartFile file, List<MultipartFile> evidenceFiles) {
+        List<MultipartFile> combined = new ArrayList<>();
+        if (file != null && !file.isEmpty()) {
+            combined.add(file);
+        }
+        if (evidenceFiles != null && !evidenceFiles.isEmpty()) {
+            for (MultipartFile evidenceFile : evidenceFiles) {
+                if (evidenceFile != null && !evidenceFile.isEmpty()) {
+                    combined.add(evidenceFile);
+                }
+            }
+        }
+        return combined;
     }
 }
