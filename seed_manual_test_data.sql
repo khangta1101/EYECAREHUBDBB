@@ -17,6 +17,7 @@ BEGIN TRY
     DECLARE @OrderItemId BIGINT;
     DECLARE @CartId BIGINT;
     DECLARE @LocationId BIGINT;
+    DECLARE @FulfillmentTaskId BIGINT;
 
     /* 1) Accounts + Customer */
     IF OBJECT_ID('dbo.accounts', 'U') IS NOT NULL
@@ -357,6 +358,11 @@ BEGIN TRY
                 @Now
             );
         END;
+
+        SELECT TOP 1 @FulfillmentTaskId = [FulfillmentTaskId]
+        FROM [FulfillmentTasks]
+        WHERE [OrderId] = @OrderId AND [TaskType] = 'PACK'
+        ORDER BY [FulfillmentTaskId] DESC;
     END;
 
     /* 6) Payment + Shipment (if these tables exist in your DB) */
@@ -461,6 +467,12 @@ BEGIN TRY
     END;
 
     COMMIT TRAN;
+    SELECT
+        @OrderId AS OrderId,
+        @OrderItemId AS OrderItemId,
+        @FulfillmentTaskId AS TaskId,
+        @CartId AS CartId,
+        @VariantId AS VariantId;
     PRINT 'Seed data inserted successfully for manual testing.';
 END TRY
 BEGIN CATCH

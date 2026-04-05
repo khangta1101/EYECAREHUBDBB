@@ -41,9 +41,11 @@ public class OrderService {
     private static final Map<OrderStatus, EnumSet<OrderStatus>> VALID_TRANSITIONS;
     static {
         VALID_TRANSITIONS = new HashMap<>();
-        VALID_TRANSITIONS.put(OrderStatus.NEW,        EnumSet.of(OrderStatus.CONFIRMED, OrderStatus.CANCELLED));
-        VALID_TRANSITIONS.put(OrderStatus.CONFIRMED,  EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
-        VALID_TRANSITIONS.put(OrderStatus.PROCESSING, EnumSet.of(OrderStatus.SHIPPED, OrderStatus.CANCELLED));
+        VALID_TRANSITIONS.put(OrderStatus.NEW,          EnumSet.of(OrderStatus.CONFIRMED, OrderStatus.CANCELLED));
+        VALID_TRANSITIONS.put(OrderStatus.CONFIRMED,    EnumSet.of(OrderStatus.WAITING_STOCK, OrderStatus.PROCESSING, OrderStatus.CANCELLED));
+        VALID_TRANSITIONS.put(OrderStatus.WAITING_STOCK, EnumSet.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED));
+        VALID_TRANSITIONS.put(OrderStatus.PROCESSING,   EnumSet.of(OrderStatus.READY_TO_SHIP, OrderStatus.CANCELLED));
+        VALID_TRANSITIONS.put(OrderStatus.READY_TO_SHIP, EnumSet.of(OrderStatus.SHIPPED, OrderStatus.CANCELLED));
         VALID_TRANSITIONS.put(OrderStatus.SHIPPED,    EnumSet.of(OrderStatus.COMPLETED));
         VALID_TRANSITIONS.put(OrderStatus.COMPLETED,  EnumSet.of(OrderStatus.REFUNDED));
         VALID_TRANSITIONS.put(OrderStatus.CANCELLED,  EnumSet.noneOf(OrderStatus.class));
@@ -117,6 +119,9 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
         OrderStatus current = order.getStatus();
+        if (current == newStatus) {
+            return order;
+        }
         EnumSet<OrderStatus> allowed = VALID_TRANSITIONS.getOrDefault(current, EnumSet.noneOf(OrderStatus.class));
         if (!allowed.contains(newStatus)) {
             throw new RuntimeException("Cannot transition from " + current + " to " + newStatus);
