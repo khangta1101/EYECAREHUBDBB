@@ -24,6 +24,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findByCategoryId(Long categoryId, Pageable pageable);
     
     List<Product> findByIsActiveTrue();
+
+    @Query("SELECT p FROM Product p WHERE p.isActive = true OR p.isActive IS NULL ORDER BY p.createdAt DESC")
+    List<Product> findVisibleProducts();
     
     Page<Product> findByIsActiveTrue(Pageable pageable);
     

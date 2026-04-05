@@ -1,9 +1,13 @@
 package com.example.EyeCareHubDB.service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.Collections;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -26,6 +30,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class ProductService {
 
+    private static final Logger log = LoggerFactory.getLogger(ProductService.class);
+
     private static final Set<String> ALLOWED_PRODUCT_TYPES = Set.of("FRAME", "LENS", "SERVICE");
     
     private final ProductRepository productRepository;
@@ -34,8 +40,9 @@ public class ProductService {
     private final ProductMediaService productMediaService;
     
     public List<ProductDTO> getAllProducts() {
-        return productRepository.findByIsActiveTrue().stream()
-                .map(this::toDTO)
+        return productRepository.findVisibleProducts().stream()
+            .map(this::safeToDTO)
+            .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
     
@@ -199,20 +206,48 @@ public class ProductService {
     }
     
     private ProductDTO toDTO(Product product) {
+        Long productId = product.getId();
         return ProductDTO.builder()
-                .productId(product.getId())
+                .productId(productId)
                 .name(product.getName())
                 .sku(product.getSku())
                 .searchTags(product.getSearchTags())
                 .productType(product.getProductType())
-                .primaryCategoryId(product.getCategory().getId())
+                .primaryCategoryId(product.getCategory() != null ? product.getCategory().getId() : null)
                 .brand(product.getBrand())
                 .description(product.getDescription())
                 .isActive(product.getIsActive())
                 .createdAt(product.getCreatedAt())
-                .media(productMediaService.getAllMediaByProductId(product.getId()))
-                .variants(productVariantService.getVariantsByProductId(product.getId()))
+                .media(getSafeMedia(productId))
+                .variants(getSafeVariants(productId))
                 .build();
+    }
+
+    private ProductDTO safeToDTO(Product product) {
+        try {
+            return toDTO(product);
+        } catch (RuntimeException ex) {
+            log.warn("Skip product {} due to mapping error: {}", product != null ? product.getId() : null, ex.getMessage());
+            return null;
+        }
+    }
+
+    private List<com.example.EyeCareHubDB.dto.ProductMediaDTO> getSafeMedia(Long productId) {
+        try {
+            return productMediaService.getAllMediaByProductId(productId);
+        } catch (RuntimeException ex) {
+            log.warn("Failed to load media for product {}: {}", productId, ex.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    private List<com.example.EyeCareHubDB.dto.ProductVariantDTO> getSafeVariants(Long productId) {
+        try {
+            return productVariantService.getVariantsByProductId(productId);
+        } catch (RuntimeException ex) {
+            log.warn("Failed to load variants for product {}: {}", productId, ex.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     private ProductDetailResponse toDetailResponse(Product product) {
