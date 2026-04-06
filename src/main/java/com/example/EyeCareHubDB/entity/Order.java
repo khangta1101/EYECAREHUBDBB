@@ -7,6 +7,7 @@ import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -68,8 +69,8 @@ public class Order {
     @Column(name = "OrderType", nullable = false, length = 20)
     private OrderType orderType;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "Status", nullable = false, length = 20)
+    @Convert(converter = OrderStatusConverter.class)
     @Builder.Default
     private OrderStatus status = OrderStatus.NEW;
 
@@ -133,11 +134,9 @@ public class Order {
         IN_STOCK, PREORDER, PRESCRIPTION
     }
 
-    // ⭐ STATE MACHINE: NEW→CONFIRMED→PROCESSING→SHIPPED→COMPLETED (trình tự chuẩn)
-    // AWAITING_STOCK: chờ hàng pre-order về. LAB_PROCESSING: đang cắt/lắp kính thuốc.
-    // WAITING_STOCK: giá trị legacy cũ trong DB, giữ để tương thích dữ liệu cũ.
-    // CANCELLED/REFUNDED: trạng thái kết thúc (không chuyển tiếp và u được).
+    // ⭐ STATE MACHINE: NEW→CONFIRMED→AWAITING→PROCESSING→READY→DELIVERY→COMPLETED
+    // CANCELLED/REFUNDED: trạng thái kết thúc (không chuyển tiếp).
     public enum OrderStatus {
-        NEW, CONFIRMED, PROCESSING, SHIPPED, COMPLETED, CANCELLED, REFUNDED, AWAITING_STOCK, WAITING_STOCK, LAB_PROCESSING
+        NEW, CONFIRMED, AWAITING, PROCESSING, READY, DELIVERY, COMPLETED, CANCELLED, REFUNDED
     }
 }

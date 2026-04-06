@@ -15,9 +15,9 @@ import com.example.EyeCareHubDB.entity.Order.OrderStatus;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
-    Page<Order> findByCustomerOrderByCreatedAtDesc(Customer customer, Pageable pageable);
-    Page<Order> findByCustomerAndStatusOrderByCreatedAtDesc(Customer customer, OrderStatus status, Pageable pageable);
-    Page<Order> findByStatusOrderByCreatedAtDesc(OrderStatus status, Pageable pageable);
+    Page<Order> findByCustomer(Customer customer, Pageable pageable);
+    Page<Order> findByCustomerAndStatus(Customer customer, OrderStatus status, Pageable pageable);
+    Page<Order> findByStatus(OrderStatus status, Pageable pageable);
     List<Order> findByStatus(OrderStatus status);
     Optional<Order> findByOrderNo(String orderNo);
     List<Order> findByCustomerAndStatus(Customer customer, OrderStatus status);

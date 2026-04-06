@@ -35,7 +35,7 @@ public class DashboardService {
         List<OrderStatus> revenueStatuses = Arrays.asList(
             OrderStatus.CONFIRMED, 
             OrderStatus.PROCESSING, 
-            OrderStatus.SHIPPED, 
+            OrderStatus.DELIVERY, 
             OrderStatus.COMPLETED
         );
 
@@ -76,7 +76,7 @@ public class DashboardService {
         List<OrderStatus> validStatuses = Arrays.asList(
             OrderStatus.CONFIRMED, 
             OrderStatus.PROCESSING, 
-            OrderStatus.SHIPPED, 
+            OrderStatus.DELIVERY, 
             OrderStatus.COMPLETED
         );
 

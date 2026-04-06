@@ -2,13 +2,17 @@ package com.example.EyeCareHubDB.service;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +50,11 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class OrderService {
+
+    private static final Set<String> ALLOWED_ORDER_SORT_FIELDS = Set.of(
+        "id", "orderNo", "status", "orderType", "channel", "subtotal", "discountTotal",
+        "shippingFee", "grandTotal", "createdAt", "updatedAt"
+    );
 
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
@@ -164,7 +173,7 @@ public class OrderService {
 
     // Cập nhật trạng thái đơn hàng, không ép theo thứ tự trạng thái.
     // CANCELLED → releaseStock() (trả kho) | COMPLETED → confirmStock() (xuất kho)
-    // CONFIRMED/PROCESSING/AWAITING_STOCK/LAB_PROCESSING → tạo FulfillmentTask tự động
+    // CONFIRMED/AWAITING/PROCESSING → tạo FulfillmentTask tự động
     @Transactional
     public OrderDTO updateStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
@@ -180,8 +189,7 @@ public class OrderService {
             order.getItems().forEach(i ->
                 inventoryService.confirmStock(i.getVariant().getId(), i.getQty()));
         }
-        if (newStatus == OrderStatus.CONFIRMED || newStatus == OrderStatus.PROCESSING 
-            || newStatus == OrderStatus.AWAITING_STOCK || newStatus == OrderStatus.WAITING_STOCK || newStatus == OrderStatus.LAB_PROCESSING) {
+        if (newStatus == OrderStatus.CONFIRMED || newStatus == OrderStatus.AWAITING || newStatus == OrderStatus.PROCESSING) {
             fulfillmentService.generateTasksForOrder(orderId);
         }
         order.setStatus(newStatus);
@@ -197,28 +205,54 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public Page<OrderDTO> getOrdersByCustomer(Long customerId, OrderStatus status, Pageable pageable) {
+        Pageable safePageable = sanitizePageable(pageable);
         Customer customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new RuntimeException("Customer not found: " + customerId));
         Page<Order> ordersPage = status != null
-            ? orderRepository.findByCustomerAndStatusOrderByCreatedAtDesc(customer, status, pageable)
-            : orderRepository.findByCustomerOrderByCreatedAtDesc(customer, pageable);
+            ? orderRepository.findByCustomerAndStatus(customer, status, safePageable)
+            : orderRepository.findByCustomer(customer, safePageable);
         return ordersPage
             .map(this::toDTO);
     }
 
     @Transactional(readOnly = true)
     public Page<OrderDTO> getAllOrders(OrderStatus status, Pageable pageable) {
+        Pageable safePageable = sanitizePageable(pageable);
         Page<Order> ordersPage = status != null
-            ? orderRepository.findByStatusOrderByCreatedAtDesc(status, pageable)
-            : orderRepository.findAll(pageable);
+            ? orderRepository.findByStatus(status, safePageable)
+            : orderRepository.findAll(safePageable);
         return ordersPage
             .map(this::toDTO);
+    }
+
+    private Pageable sanitizePageable(Pageable pageable) {
+        if (pageable == null) {
+            return PageRequest.of(0, 10, Sort.by(Sort.Order.desc("createdAt")));
+        }
+
+        Set<String> seen = new HashSet<>();
+        List<Sort.Order> safeOrders = pageable.getSort().stream()
+            .filter(order -> order != null && order.getProperty() != null)
+            .filter(order -> {
+                String property = order.getProperty().trim();
+                return property.matches("[A-Za-z0-9_]+") && ALLOWED_ORDER_SORT_FIELDS.contains(property);
+            })
+            .filter(order -> seen.add(order.getProperty().trim()))
+            .map(order -> order.isAscending()
+                ? Sort.Order.asc(order.getProperty().trim())
+                : Sort.Order.desc(order.getProperty().trim()))
+            .toList();
+
+        Sort safeSort = safeOrders.isEmpty()
+            ? Sort.by(Sort.Order.desc("createdAt"))
+            : Sort.by(safeOrders);
+
+        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), safeSort);
     }
 
     @Transactional(readOnly = true)
     public List<String> getOrderStatuses() {
         return java.util.Arrays.stream(OrderStatus.values())
-            .filter(s -> s != OrderStatus.WAITING_STOCK)
             .map(Enum::name)
             .toList();
     }
@@ -247,13 +281,7 @@ public class OrderService {
     }
 
     private String normalizeOrderStatus(OrderStatus status) {
-        if (status == null) {
-            return null;
-        }
-        if (status == OrderStatus.WAITING_STOCK) {
-            return OrderStatus.AWAITING_STOCK.name();
-        }
-        return status.name();
+        return status != null ? status.name() : null;
     }
 
     private PaymentDTO toPaymentDTO(com.example.EyeCareHubDB.entity.Payment p) {

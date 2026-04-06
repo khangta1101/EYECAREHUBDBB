@@ -82,7 +82,7 @@ public class FulfillmentService {
     }
 
     // Cập nhật task: ghi startedAt khi IN_PROGRESS, doneAt khi DONE.
-    // Nếu DONE và đơn đang LAB_PROCESSING/AWAITING_STOCK:
+    // Nếu DONE và đơn đang AWAITING:
     //   → Kiểm tra tất cả prep tasks (CUT_LENS, ASSEMBLE, RECEIVE_PREORDER) DONE chưa
     //   → Nếu hết → tự động chuyển Order sang PROCESSING
     @Transactional
@@ -116,9 +116,7 @@ public class FulfillmentService {
                 
                 // If this was a prescription/preorder task, check if the whole order can move to PROCESSING
                 Order order = task.getOrder();
-                if (order.getStatus() == Order.OrderStatus.LAB_PROCESSING
-                    || order.getStatus() == Order.OrderStatus.AWAITING_STOCK
-                    || order.getStatus() == Order.OrderStatus.WAITING_STOCK) {
+                if (order.getStatus() == Order.OrderStatus.AWAITING) {
                     boolean allPrepDone = taskRepository.findByOrderIdOrderByCreatedAtAsc(order.getId()).stream()
                         .filter(t -> t.getTaskType() == TaskType.CUT_LENS || t.getTaskType() == TaskType.ASSEMBLE || t.getTaskType() == TaskType.RECEIVE_PREORDER)
                         .allMatch(t -> t.getStatus() == TaskStatus.DONE);
@@ -167,7 +165,7 @@ public class FulfillmentService {
     }
 
     // Xử lý khi hàng pre-order về kho. Tự động đánh dấu RECEIVE_PREORDER task DONE
-    // và chuyển đơn AWAITING_STOCK → PROCESSING nếu nhận đủ hàng.
+    // và chuyển đơn AWAITING → PROCESSING nếu nhận đủ hàng.
     @Transactional
     public void processStockArrival(Long variantId, int qtyReceived) {
         // Find all pending RECEIVE_PREORDER tasks for this variant
@@ -186,10 +184,9 @@ public class FulfillmentService {
                 taskRepository.save(t);
                 remainingQty -= orderQty;
 
-                // After receiving stock, check if order can move from AWAITING_STOCK to PROCESSING
+                // After receiving stock, check if order can move from AWAITING to PROCESSING
                 Order order = t.getOrder();
-                if (order.getStatus() == Order.OrderStatus.AWAITING_STOCK
-                    || order.getStatus() == Order.OrderStatus.WAITING_STOCK) {
+                if (order.getStatus() == Order.OrderStatus.AWAITING) {
                     boolean allReceived = order.getItems().stream()
                         .filter(item -> item.getPreorderExpectedAt() != null)
                         .allMatch(item -> taskRepository.findByTaskTypeAndStatus(TaskType.RECEIVE_PREORDER, TaskStatus.DONE).stream()
