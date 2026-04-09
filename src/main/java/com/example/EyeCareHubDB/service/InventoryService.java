@@ -2,6 +2,7 @@ package com.example.EyeCareHubDB.service;
 
 import java.util.List;
 
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 // SERVICE: InventoryService — Lớp trung gian (Facade) giữa Controller và VariantInventoryService.
 // Thiết kế 2 lớp: InventoryService (validate + convert DTO) → VariantInventoryService (logic kho)
 // availableQty = onHandQty - reservedQty (tính toán, không lưu DB)
+// ApplicationContext dùng để lấy OrderService lazy (tránh circular dependency).
 // ============================================================
 @Service
 @RequiredArgsConstructor
@@ -29,6 +31,8 @@ public class InventoryService {
     private final InventoryLocationRepository locationRepository;
     private final ProductVariantRepository variantRepository;
     private final VariantInventoryService variantInventoryService;
+    // Lấy lazy qua ApplicationContext để tránh circular dependency (OrderService <-> InventoryService)
+    private final ApplicationContext applicationContext;
 
     // GIỮ KHO khi checkout IN_STOCK. reservedQty TĂNG → availableQty GIẢM.
     @Transactional
@@ -36,6 +40,12 @@ public class InventoryService {
         variantRepository.findById(variantId)
             .orElseThrow(() -> new RuntimeException("Variant not found: " + variantId));
         variantInventoryService.reserveStock(variantId, qty);
+    }
+
+    // Kiểm tra tồn kho còn đủ cho qty hay không (dùng bởi confirmAwaitingPreorders).
+    @Transactional(readOnly = true)
+    public boolean hasAvailableStock(Long variantId, int qty) {
+        return variantInventoryService.hasAvailableStock(variantId, qty);
     }
 
     // THẢ KHO khi đơn bị HỦY. reservedQty GIẢM → availableQty TĂNG lại.
@@ -75,6 +85,7 @@ public class InventoryService {
     }
 
     // Điều chỉnh kho thủ công tại 1 Location. onHandDelta dương=nhập kho, âm=xuất kho.
+    // Sau khi nhập kho (delta > 0): tự động kích hoạt các đơn PREORDER đang chờ tồn kho (AWAITING → CONFIRMED).
     @Transactional
     public InventoryStockDTO adjustStock(Long locationId, Long variantId, int onHandDelta) {
         InventoryLocation location = locationRepository.findById(locationId)
@@ -86,7 +97,19 @@ public class InventoryService {
             .orElseGet(() -> InventoryStock.builder().variant(variant).location(location).onHandQty(0).reservedQty(0).build());
 
         stock.setOnHandQty(stock.getOnHandQty() + onHandDelta);
-        return toStockDTO(stockRepository.save(stock));
+        InventoryStockDTO result = toStockDTO(stockRepository.save(stock));
+
+        // Khi nhập kho (delta dương): kiểm tra và tự động confirm các đơn PREORDER đang chờ
+        if (onHandDelta > 0) {
+            try {
+                OrderService orderService = applicationContext.getBean(OrderService.class);
+                orderService.confirmAwaitingPreorders(variantId);
+            } catch (Exception e) {
+                // Không chặn luồng nhập kho nếu auto-confirm thất bại
+            }
+        }
+
+        return result;
     }
 
     public InventoryLocationDTO toLocationDTO(InventoryLocation location) {

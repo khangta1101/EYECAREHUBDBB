@@ -163,14 +163,19 @@ public class PaymentService {
             payment = paymentRepository.findById(payment.getId()).orElse(payment);
         }
 
-        // ✅ update order luôn (CÁI BẠN MUỐN)
+        // ✅ Chỉ tự động CONFIRMED với đơn IN_STOCK và PRESCRIPTION.
+        // Đơn PREORDER giữ nguyên NEW — Sale sẽ xác nhận thủ công → AWAITING.
         if (success) {
             Order order = payment.getOrder();
-            if (order != null && order.getStatus() == OrderStatus.NEW) {
+            if (order != null
+                    && order.getStatus() == OrderStatus.NEW
+                    && order.getOrderType() != Order.OrderType.PREORDER) {
                 order.setStatus(OrderStatus.CONFIRMED);
                 orderRepository.save(order);
                 fulfillmentService.generateTasksForOrder(order.getId());
                 System.out.println("✅ Đã cập nhật trạng thái Order sang CONFIRMED và tạo tasks cho txnRef: " + txnRef);
+            } else if (order != null && order.getOrderType() == Order.OrderType.PREORDER) {
+                System.out.println("ℹ️ Đơn PREORDER #" + order.getId() + " giữ nguyên NEW — chờ Sale xác nhận.");
             }
         }
 
@@ -188,7 +193,8 @@ public class PaymentService {
                 .build();
     }
 
-    // Cập nhật trạng thái Payment. Nếu PAID → ghi paidAt + cập nhật Order NEW→CONFIRMED.
+    // Cập nhật trạng thái Payment. Nếu PAID → ghi paidAt.
+    // Chỉ tự động CONFIRMED cho đơn IN_STOCK/PRESCRIPTION. Đơn PREORDER giữ nguyên NEW.
     @Transactional
     public PaymentDTO updateStatus(Long paymentId, PaymentStatus newStatus, String transactionRef) {
         Payment payment = paymentRepository.findById(paymentId)
@@ -199,7 +205,9 @@ public class PaymentService {
         if (newStatus == PaymentStatus.PAID) {
             payment.setPaidAt(LocalDateTime.now());
             Order order = payment.getOrder();
-            if (order.getStatus() == OrderStatus.NEW) {
+            // PREORDER: Sale xác nhận thủ công → giữ nguyên NEW
+            if (order.getStatus() == OrderStatus.NEW
+                    && order.getOrderType() != Order.OrderType.PREORDER) {
                 order.setStatus(OrderStatus.CONFIRMED);
                 orderRepository.save(order);
                 fulfillmentService.generateTasksForOrder(order.getId());
@@ -243,6 +251,7 @@ public class PaymentService {
     }
 
     // Xác nhận thanh toán thủ công theo txnRef (admin confirm). Chỉ chạy nếu chưa PAID.
+    // PREORDER: giữ nguyên NEW, không tự động CONFIRMED.
     @Transactional
     public PaymentDTO confirmPayment(String txnRef) {
 
@@ -254,7 +263,9 @@ public class PaymentService {
             payment.setPaidAt(LocalDateTime.now());
 
             Order order = payment.getOrder();
-            if (order.getStatus() == OrderStatus.NEW) {
+            // PREORDER: Sale xác nhận thủ công → không tự CONFIRMED ở đây
+            if (order.getStatus() == OrderStatus.NEW
+                    && order.getOrderType() != Order.OrderType.PREORDER) {
                 order.setStatus(OrderStatus.CONFIRMED);
                 orderRepository.save(order);
             }

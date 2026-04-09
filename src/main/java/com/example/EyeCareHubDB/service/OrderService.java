@@ -196,6 +196,53 @@ public class OrderService {
         return toDTO(orderRepository.save(order));
     }
 
+    // ⭐ AUTO-CONFIRM PREORDER: Sau khi Manager nhập kho cho một variant,
+    // kiểm tra tất cả đơn PREORDER đang AWAITING có item chứa variant này.
+    // Nếu tồn kho đủ đáp ứng từng đơn → reserveStock() + chuyển CONFIRMED.
+    // Xử lý lần lượt từng đơn (theo thứ tự ID). Nếu tồn kho chỉ đủ một phần,
+    // chỉ các đơn đầu tiên (FIFO) được confirm.
+    @Transactional
+    public void confirmAwaitingPreorders(Long variantId) {
+        List<Order> awaitingPreorders = orderRepository.findByStatusAndOrderTypeWithItems(
+                OrderStatus.AWAITING, OrderType.PREORDER);
+
+        for (Order order : awaitingPreorders) {
+            // Lọc các item trong đơn có chứa variantId này
+            boolean hasVariant = order.getItems().stream()
+                    .anyMatch(item -> item.getVariant() != null
+                            && variantId.equals(item.getVariant().getId()));
+            if (!hasVariant) continue;
+
+            // Kiểm tra tồn kho đủ cho từng item trong đơn
+            boolean allSufficient = order.getItems().stream().allMatch(item -> {
+                Long vid = item.getVariant() != null ? item.getVariant().getId() : null;
+                if (vid == null) return false;
+                try {
+                    return inventoryService.hasAvailableStock(vid, item.getQty());
+                } catch (Exception e) {
+                    return false;
+                }
+            });
+
+            if (!allSufficient) continue;
+
+            // Giữ kho cho từng item (giống như IN_STOCK checkout)
+            try {
+                order.getItems().forEach(item ->
+                        inventoryService.reserveStock(item.getVariant().getId(), item.getQty()));
+            } catch (Exception e) {
+                // Không đủ kho cho item nào đó → bỏ qua đơn này
+                continue;
+            }
+
+            // Chuyển sang CONFIRMED và tạo fulfillment tasks
+            order.setStatus(OrderStatus.CONFIRMED);
+            orderRepository.save(order);
+            fulfillmentService.generateTasksForOrder(order.getId());
+        }
+    }
+
+
     @Transactional(readOnly = true)
     public OrderDTO getOrder(Long id) {
         return orderRepository.findById(id)

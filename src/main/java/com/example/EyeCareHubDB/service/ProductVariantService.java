@@ -5,6 +5,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 // Ví dụ: Gọng Ray-Ban → [Đen-M, Vàng-M, Đen-L] — mỗi variant có SKU, giá, kho riêng.
 // SKU variant: tự sinh từ SKU sản phẩm + màu + size. VD: "P-KINHM-DEN-M".
 // stockQuantity trong DTO = tổng onHandQty từ tất cả Location (kho).
+// ApplicationContext dùng để lấy OrderService lazy (tránh circular dependency).
 // ============================================================
 @Service
 @RequiredArgsConstructor
@@ -35,6 +37,8 @@ public class ProductVariantService {
     private final ProductVariantRepository variantRepository;
     private final ProductRepository productRepository;
     private final VariantInventoryService variantInventoryService;
+    // Lấy lazy qua ApplicationContext để tránh circular dependency vời OrderService
+    private final ApplicationContext applicationContext;
     
     // Lấy TẤT CẢ biến thể (kể cả inactive) của sản phẩm. Dùng cho admin quản lý.
     public List<ProductVariantDTO> getVariantsByProductId(Long productId) {
@@ -64,12 +68,13 @@ public class ProductVariantService {
     }
     
     // Tạo biến thể mới. SKU tự sinh nếu không có. Nếu có stockQuantity → nhập kho ngay.
+    // Sau khi nhập kho: auto-confirm các đơn PREORDER AWAITING có variant này.
     public ProductVariantDTO createVariant(Long productId, ProductVariantCreateRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + productId));
 
         String sku = resolveSku(product, request);
-        
+
         ProductVariant variant = ProductVariant.builder()
                 .product(product)
             .sku(sku)
@@ -83,10 +88,11 @@ public class ProductVariantService {
                 .salePrice(request.getSalePrice())
                 .isActive(true)
                 .build();
-        
+
         ProductVariant saved = variantRepository.save(variant);
-        if (request.getStockQuantity() != null) {
+        if (request.getStockQuantity() != null && request.getStockQuantity() > 0) {
             variantInventoryService.setTotalStock(saved, request.getStockQuantity());
+            triggerConfirmAwaitingPreorders(saved.getId());
         }
         return toDTO(saved);
     }
@@ -136,10 +142,14 @@ public class ProductVariantService {
     }
     
     // Cập nhật biến thể (partial update). Nếu có stockQuantity → đồng bộ kho.
+    // Sau khi tăng kho: auto-confirm các đơn PREORDER đang AWAITING.
     public ProductVariantDTO updateVariant(Long id, ProductVariantUpdateRequest request) {
         ProductVariant variant = variantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product variant not found with id: " + id));
-        
+
+        // Lưu lại tồn kho hiện tại để so sánh sau
+        int stockBefore = variantInventoryService.getStockSnapshot(variant).stockQuantity();
+
         if (request.getVariantName() != null) {
             variant.setVariantName(request.getVariantName());
         }
@@ -167,10 +177,14 @@ public class ProductVariantService {
         if (request.getIsActive() != null) {
             variant.setIsActive(request.getIsActive());
         }
-        
+
         ProductVariant updated = variantRepository.save(variant);
         if (request.getStockQuantity() != null) {
             variantInventoryService.setTotalStock(updated, request.getStockQuantity());
+            // Khi tồn kho tăng: kích hoạt các đơn PREORDER đang chờ
+            if (request.getStockQuantity() > stockBefore) {
+                triggerConfirmAwaitingPreorders(updated.getId());
+            }
         }
         return toDTO(updated);
     }
@@ -212,11 +226,23 @@ public class ProductVariantService {
     }
     
     // Nhập kho: tăng onHandQty tại Location mặc định.
+    // Sau khi nhập: auto-confirm các đơn PREORDER đang AWAITING có variant này.
     public void incrementStock(Long id, Integer quantity) {
         ProductVariant variant = variantRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product variant not found with id: " + id));
 
         variantInventoryService.incrementStock(variant, quantity);
+        triggerConfirmAwaitingPreorders(id);
+    }
+
+    // Helper: gọi OrderService.confirmAwaitingPreorders() đưa qua ApplicationContext để tránh circular dependency.
+    private void triggerConfirmAwaitingPreorders(Long variantId) {
+        try {
+            OrderService orderService = applicationContext.getBean(OrderService.class);
+            orderService.confirmAwaitingPreorders(variantId);
+        } catch (Exception e) {
+            // Không chặn luồng chính nếu auto-confirm thất bại
+        }
     }
     
     // Convert ProductVariant → ProductVariantDTO. Đọc thêm stockSnapshot từ InventoryService.

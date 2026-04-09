@@ -24,12 +24,13 @@ import lombok.RequiredArgsConstructor;
 // ============================================================
 // SERVICE: FulfillmentService — Quản lý quy trình hoàn thiện đơn hàng (Fulfillment).
 // TaskType (loại công việc):
-//   CUT_LENS     → Cắt tròng kính theo đơn thuốc
-//   ASSEMBLE     → Lắp ráp kính
-//   QC           → Kiểm tra chất lượng
+//   CUT_LENS         → Cắt tròng kính theo đơn thuốc
+//   ASSEMBLE         → Lắp ráp kính
+//   QC               → Kiểm tra chất lượng
 //   RECEIVE_PREORDER → Nhận hàng pre-order về kho
-//   PACK         → Đóng gói đơn hàng
-//   SHIP         → Bàn giao cho đơn vị vận chuyển
+//   PACK             → Đóng gói đơn hàng
+// Lưu ý: SHIP không còn là fulfillment task.
+//   Việc tạo vận đơn được xử lý ở trang Quản lý đơn hàng (Operations → Vận chuyển).
 // TaskStatus: PENDING → IN_PROGRESS → DONE
 // ============================================================
 @Service
@@ -43,7 +44,8 @@ public class FulfillmentService {
     // ⭐ TỰ ĐỘNG TẠO TASKS khi đơn được xác nhận (gọi từ PaymentService/OrderService)
     // Prescription item → CUT_LENS + ASSEMBLE + QC
     // Pre-order item    → RECEIVE_PREORDER + QC
-    // Mọi đơn           → PACK + SHIP (task chung)
+    // Mọi đơn           → PACK (task chung)
+    // SHIP không tạo ở đây — vận đơn được xử lý ở trang Quản lý đơn hàng/Vận chuyển.
     // Nếu đã có task rồi → bỏ qua (tránh tạo trùng)
     @Transactional
     public void generateTasksForOrder(Long orderId) {
@@ -56,20 +58,19 @@ public class FulfillmentService {
 
         for (com.example.EyeCareHubDB.entity.OrderItem item : order.getItems()) {
             if (Boolean.TRUE.equals(item.getIsPrescription())) {
-                // Task for prescription assembly
+                // Task gia công kính theo đơn thuốc
                 createTask(order, item, TaskType.CUT_LENS);
                 createTask(order, item, TaskType.ASSEMBLE);
                 createTask(order, item, TaskType.QC);
             } else if (item.getPreorderExpectedAt() != null) {
-                // Task for pre-order receiving
+                // Task nhận hàng pre-order về kho
                 createTask(order, item, TaskType.RECEIVE_PREORDER);
                 createTask(order, item, TaskType.QC);
             }
         }
 
-        // Generic tasks for the whole order
+        // Task chung: đóng gói (PACK). Không tạo SHIP — vận chuyển xử lý ở trang Orders.
         createTask(order, null, TaskType.PACK);
-        createTask(order, null, TaskType.SHIP);
     }
 
     private void createTask(Order order, com.example.EyeCareHubDB.entity.OrderItem item, TaskType type) {
@@ -109,12 +110,6 @@ public class FulfillmentService {
                 }
             }
             if (status == TaskStatus.DONE) {
-                // Chỉ bắt buộc ảnh bằng chứng cho task SHIP (bàn giao vận chuyển)
-                // Các task nội bộ (CUT_LENS, ASSEMBLE, QC, PACK...) không cần ảnh
-                if (task.getTaskType() == TaskType.SHIP &&
-                        (task.getEvidenceUrls() == null || task.getEvidenceUrls().isBlank())) {
-                    throw new RuntimeException("Fulfillment evidence images are required before setting task to DONE");
-                }
                 task.setDoneAt(LocalDateTime.now());
                 
                 // If this was a prescription/preorder task, check if the whole order can move to PROCESSING
@@ -212,12 +207,11 @@ public class FulfillmentService {
     }
 
     // Lấy task của nhân viên: PENDING → bao gồm cả task chưa ai nhận (unassigned)
+    // Dùng query DB trực tiếp thay vì findAll().stream().filter() — tránh load toàn bảng
     @Transactional(readOnly = true)
     public List<FulfillmentTaskDTO> getMyTasks(Long accountId, TaskStatus status) {
         if (status == TaskStatus.PENDING) {
-            // Include unassigned tasks that any staff can pick up
-            return taskRepository.findAll().stream()
-                .filter(t -> t.getStatus() == TaskStatus.PENDING && (t.getAssignedTo() == null || t.getAssignedTo().getId().equals(accountId)))
+            return taskRepository.findPendingTasksForAccount(accountId).stream()
                 .map(this::toDTO)
                 .toList();
         }

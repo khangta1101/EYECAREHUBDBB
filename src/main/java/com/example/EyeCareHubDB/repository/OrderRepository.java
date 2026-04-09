@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import com.example.EyeCareHubDB.entity.Customer;
 import com.example.EyeCareHubDB.entity.Order;
 import com.example.EyeCareHubDB.entity.Order.OrderStatus;
+import com.example.EyeCareHubDB.entity.Order.OrderType;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
@@ -21,6 +22,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByStatus(OrderStatus status);
     Optional<Order> findByOrderNo(String orderNo);
     List<Order> findByCustomerAndStatus(Customer customer, OrderStatus status);
+
+    // Lấy tất cả đơn PREORDER đang AWAITING (chờ nhập hàng) — dùng để auto-confirm sau khi manager nhập kho
+    @Query("SELECT DISTINCT o FROM Order o JOIN FETCH o.items i WHERE o.status = :status AND o.orderType = :orderType")
+    List<Order> findByStatusAndOrderTypeWithItems(
+            @org.springframework.data.repository.query.Param("status") OrderStatus status,
+            @org.springframework.data.repository.query.Param("orderType") OrderType orderType);
 
     @Query("SELECT SUM(o.grandTotal) FROM Order o WHERE o.status IN :statuses")
     java.math.BigDecimal sumTotalRevenueByStatus(@org.springframework.data.repository.query.Param("statuses") java.util.Collection<OrderStatus> statuses);
