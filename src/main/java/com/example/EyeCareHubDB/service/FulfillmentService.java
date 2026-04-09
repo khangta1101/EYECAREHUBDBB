@@ -109,7 +109,10 @@ public class FulfillmentService {
                 }
             }
             if (status == TaskStatus.DONE) {
-                if (task.getEvidenceUrls() == null || task.getEvidenceUrls().isBlank()) {
+                // Chỉ bắt buộc ảnh bằng chứng cho task SHIP (bàn giao vận chuyển)
+                // Các task nội bộ (CUT_LENS, ASSEMBLE, QC, PACK...) không cần ảnh
+                if (task.getTaskType() == TaskType.SHIP &&
+                        (task.getEvidenceUrls() == null || task.getEvidenceUrls().isBlank())) {
                     throw new RuntimeException("Fulfillment evidence images are required before setting task to DONE");
                 }
                 task.setDoneAt(LocalDateTime.now());
